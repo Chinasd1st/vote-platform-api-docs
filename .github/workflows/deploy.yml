@@ -32,10 +32,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
         with:
           path: .
-          name: api-docs
 
   deploy:
     needs: build
@@ -44,5 +44,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
