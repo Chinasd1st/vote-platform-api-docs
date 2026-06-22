@@ -1,0 +1,107 @@
+PollSummary:
+  type: object
+  properties:
+    id:
+      type: string
+      example: "poll-abc-123"
+    title:
+      type: string
+      example: "你最喜欢的编程语言？"
+    description:
+      type: ["string", "null"]
+    type:
+      type: string
+      enum: [single, multiple, ranked, approval, weighted]
+      example: "single"
+    status:
+      type: string
+      enum: [draft, active, closed]
+      example: "active"
+    optionsCount:
+      type: integer
+      example: 5
+    votesCount:
+      type: integer
+      example: 128
+    commentsCount:
+      type: integer
+      example: 12
+    sharesCount:
+      type: integer
+      example: 3
+    pinned:
+      type: boolean
+      example: false
+    createdAt:
+      type: integer
+      example: 1719000000
+    topic:
+      type: ["object", "null"]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        color:
+          type: string
+    author:
+      $ref: "../openapi.yaml#/components/schemas/UserSummary"
+
+PollDetail:
+  allOf:
+    - $ref: "../openapi.yaml#/components/schemas/PollSummary"
+    - type: object
+      properties:
+        allowWriteIn:
+          type: boolean
+        useIRV:
+          type: boolean
+        sortMethod:
+          type: ["string", "null"]
+          enum: [irv, schulze]
+        startsAt:
+          type: ["integer", "null"]
+        endsAt:
+          type: ["integer", "null"]
+        options:
+          type: array
+          items:
+            $ref: "../openapi.yaml#/components/schemas/PollOption"
+        userVote:
+          type: ["object", "null"]
+          properties:
+            optionId:
+              type: string
+            rank:
+              type: integer
+            weight:
+              type: integer
+        irvResult:
+          type: ["object", "null"]
+        schulzeResult:
+          type: ["object", "null"]
+        voters:
+          type: array
+          items:
+            $ref: "../openapi.yaml#/components/schemas/UserSummary"
+
+PollOption:
+  type: object
+  properties:
+    id:
+      type: string
+      example: "opt-1"
+    label:
+      type: string
+      example: "TypeScript"
+    order:
+      type: integer
+      example: 0
+    votesCount:
+      type: integer
+      example: 45
+    isWriteIn:
+      type: boolean
+      example: false

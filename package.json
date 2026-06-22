@@ -1,0 +1,18 @@
+{
+  "name": "vote-platform-api-docs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "恶俗投票平台 API 文档 (OpenAPI + Scalar)",
+  "scripts": {
+    "dev": "serve . -p 3001 -s",
+    "build": "node scripts/bundle.mjs openapi.json",
+    "validate": "node scripts/validate.mjs",
+    "check": "node scripts/check-sync.mjs",
+    "sync": "node scripts/sync-api-docs.mjs",
+    "preview": "pnpm build && pnpm dev"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.0",
+    "serve": "^14.2.6"
+  }
+}

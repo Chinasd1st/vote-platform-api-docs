@@ -1,0 +1,72 @@
+/follows/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 目标用户 ID
+
+  post:
+    tags: [Follows]
+    summary: 关注用户
+    operationId: followUser
+    security:
+      - BearerAuth: []
+    description: |
+      关注指定用户。
+
+      **行为：**
+      - 向目标用户发送关注通知
+      - 更新目标用户的粉丝计数
+      - 更新当前用户的关注计数
+
+      **限制：**
+      - 不能关注自己
+      - 已关注时返回 400
+      - 无频率限制
+    responses:
+      "200":
+        description: 关注成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  example: true
+      "400":
+        description: |
+          无法关注：
+          - 不能关注自己
+          - 已经关注了该用户
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+  delete:
+    tags: [Follows]
+    summary: 取消关注
+    operationId: unfollowUser
+    security:
+      - BearerAuth: []
+    description: |
+      取消对指定用户的关注。
+
+      **行为：**
+      - 更新目标用户的粉丝计数
+      - 更新当前用户的关注计数
+      - 不会删除对方的通知
+    responses:
+      "200":
+        description: 取消关注成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  example: true
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"

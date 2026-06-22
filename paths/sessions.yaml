@@ -1,0 +1,109 @@
+/sessions:
+  get:
+    tags: [Sessions]
+    summary: 获取登录设备列表
+    operationId: getSessions
+    security:
+      - BearerAuth: []
+    description: |
+      返回当前用户的登录设备列表。
+
+      **返回内容：**
+      - 设备信息（操作系统、浏览器、设备类型）
+      - IP 地理位置
+      - 最后活跃时间
+      - 是否为当前设备
+
+      **去重规则：**
+      - 同一设备多次登录只显示一条
+      - 按最后活跃时间倒序排列
+    responses:
+      "200":
+        description: 成功返回登录设备列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: "../openapi.yaml#/components/schemas/LoginSession"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+  post:
+    tags: [Sessions]
+    summary: 记录登录设备
+    operationId: createSession
+    security:
+      - BearerAuth: []
+    description: |
+      记录当前登录设备的信息。
+
+      **自动记录：**
+      - 通常在登录时自动调用
+      - 记录设备信息和 IP 地理位置
+
+      **设备信息格式：**
+      - 操作系统 + 版本
+      - 浏览器 + 版本
+      - 设备类型（桌面/移动/平板）
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [device, ip]
+            properties:
+              device:
+                type: string
+                description: 设备信息（User-Agent 字符串）
+              ip:
+                type: string
+                description: IP 地址
+    responses:
+      "201":
+        description: 记录成功
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/sessions/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 会话 ID
+  delete:
+    tags: [Sessions]
+    summary: 删除登录设备（强制下线）
+    operationId: deleteSession
+    security:
+      - BearerAuth: []
+    description: |
+      删除指定的登录设备记录，强制该设备下线。
+
+      **使用场景：**
+      - 发现异常登录时强制下线
+      - 用户主动登出其他设备
+
+      **行为：**
+      - 删除指定的会话记录
+      - 该设备的 JWT token 将失效
+      - 不影响当前设备
+    responses:
+      "200":
+        description: 强制下线成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"

@@ -1,0 +1,349 @@
+/profile:
+  get:
+    tags: [Profile]
+    summary: 获取当前用户资料
+    operationId: getMyProfile
+    security:
+      - BearerAuth: []
+    description: |
+      返回当前登录用户的完整资料。
+
+      **返回内容：**
+      - 基本信息（昵称、头像、横幅、简介）
+      - 社交链接
+      - 账号绑定状态
+      - 关注/粉丝数
+    responses:
+      "200":
+        description: 成功返回当前用户资料
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/UserProfile"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+  put:
+    tags: [Profile]
+    summary: 更新个人资料
+    operationId: updateProfile
+    security:
+      - BearerAuth: []
+    description: |
+      更新当前用户的个人资料。
+
+      **可更新字段：**
+      - 昵称（2-20 字符，不能包含 `<>"'&`）
+      - 头像 URL
+      - 横幅 URL
+      - 横幅版权信息（最多 100 字符）
+      - 个人简介（最多 500 字符）
+      - 社交链接列表
+      - 是否使用 WeAvatar
+
+      **注意事项：**
+      - 昵称修改后需要等待 30 天才能再次修改
+      - 头像和横幅需要是有效的图片 URL
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                minLength: 2
+                maxLength: 20
+                description: 用户昵称（2-20 字符）
+              avatar:
+                type: ["string", "null"]
+                format: uri
+                description: 头像 URL（null 清除头像）
+              banner:
+                type: ["string", "null"]
+                format: uri
+                description: 横幅图片 URL
+              bannerCredit:
+                type: ["string", "null"]
+                maxLength: 100
+                description: 横幅版权信息
+              bio:
+                type: ["string", "null"]
+                maxLength: 500
+                description: 个人简介（最多 500 字符）
+              socialLinks:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    platform:
+                      type: string
+                      description: 平台名称
+                    url:
+                      type: string
+                      format: uri
+                      description: 个人主页 URL
+                description: 社交链接列表
+              useWeavatar:
+                type: boolean
+                description: 是否使用 WeAvatar 头像
+    responses:
+      "200":
+        description: 更新成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/profile/password:
+  put:
+    tags: [Profile]
+    summary: 修改密码
+    operationId: updatePassword
+    security:
+      - BearerAuth: []
+    description: |
+      修改当前用户的密码。
+
+      **密码要求：**
+      - 当前密码必须正确
+      - 新密码至少 8 位
+      - 必须包含小写字母和数字
+
+      **修改后：**
+      - 所有其他设备的登录状态将被清除
+      - 需要重新登录
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [currentPassword, newPassword]
+            properties:
+              currentPassword:
+                type: string
+                description: 当前密码
+              newPassword:
+                type: string
+                minLength: 8
+                description: 新密码（至少 8 位）
+    responses:
+      "200":
+        description: 密码修改成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "401":
+        description: 当前密码错误
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/profile/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: |
+        用户标识，支持两种格式：
+        - UUID：完整的用户 ID
+        - Slug：短数字 ID（如 `12345`）
+
+  get:
+    tags: [Profile]
+    summary: 获取用户公开资料
+    operationId: getProfile
+    description: |
+      返回用户的公开资料信息。
+
+      **返回内容：**
+      - 基本信息（昵称、头像、横幅、简介）
+      - 创建的投票列表
+      - 粉丝数和关注数
+      - 当前用户的关注状态（是否已关注）
+      - 绑定的第三方账号（如果公开）
+
+      **可见性：**
+      - 仅返回公开信息
+      - 私密信息不会返回
+    responses:
+      "200":
+        description: 成功返回用户公开资料
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yaml#/components/schemas/UserProfile"
+                - type: object
+                  properties:
+                    createdPolls:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: 投票 ID
+                          title:
+                            type: string
+                            description: 投票标题
+                          status:
+                            type: string
+                            description: 投票状态
+                          createdAt:
+                            type: integer
+                            description: 创建时间戳
+                    boundAccount:
+                      type: ["object", "null"]
+                      description: 绑定的第三方账号（null 表示未绑定）
+                      properties:
+                        id:
+                          type: string
+                          description: 账号 ID
+                        slug:
+                          type: integer
+                          description: 账号 Slug
+                        name:
+                          type: string
+                          description: 账号名称
+                        avatar:
+                          type: ["string", "null"]
+                          description: 账号头像
+                        role:
+                          type: string
+                          enum: [main, sub]
+                          description: 账号角色（主账号/子账号）
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+/profile/{id}/followers:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 用户 ID
+  get:
+    tags: [Profile]
+    summary: 获取粉丝列表
+    operationId: getFollowers
+    description: |
+      返回用户的粉丝列表。
+
+      **返回内容：**
+      - 粉丝的用户信息（昵称、头像、简介）
+      - 按关注时间倒序排列
+    responses:
+      "200":
+        description: 成功返回粉丝列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                followers:
+                  type: array
+                  items:
+                    $ref: "../openapi.yaml#/components/schemas/UserSummary"
+
+/profile/{id}/following:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 用户 ID
+  get:
+    tags: [Profile]
+    summary: 获取关注列表
+    operationId: getFollowing
+    description: |
+      返回用户关注的用户列表。
+
+      **返回内容：**
+      - 关注的用户信息（昵称、头像、简介）
+      - 按关注时间倒序排列
+    responses:
+      "200":
+        description: 成功返回关注列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                following:
+                  type: array
+                  items:
+                    $ref: "../openapi.yaml#/components/schemas/UserSummary"
+
+/profile/{id}/votes:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 用户 ID
+  get:
+    tags: [Profile]
+    summary: 获取用户投票历史
+    operationId: getVoteHistory
+    description: |
+      返回用户参与的投票历史。
+
+      **返回内容：**
+      - 用户参与的投票列表
+      - 每次投票的时间
+
+      **分页：**
+      - 默认每页 20 条
+      - 按投票时间倒序排列
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+        description: 页码
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+        description: 每页数量
+    responses:
+      "200":
+        description: 成功返回投票历史
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      poll:
+                        $ref: "../openapi.yaml#/components/schemas/PollSummary"
+                        description: 投票信息
+                      votedAt:
+                        type: integer
+                        description: 投票时间戳
+                pagination:
+                  $ref: "../openapi.yaml#/components/schemas/Pagination"

@@ -1,0 +1,36 @@
+Notification:
+  type: object
+  properties:
+    id:
+      type: string
+    type:
+      type: string
+      enum:
+        - vote
+        - comment
+        - reply
+        - like
+        - follow
+        - poll_update
+        - poll_end
+        - mention
+        - system
+    content:
+      type: string
+    fromUser:
+      type: ["object", "null"]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        avatar:
+          type: ["string", "null"]
+    pollId:
+      type: ["string", "null"]
+    postId:
+      type: ["string", "null"]
+    isRead:
+      type: boolean
+    createdAt:
+      type: integer

@@ -1,0 +1,181 @@
+openapi: 3.1.0
+
+info:
+  title: 恶俗投票平台 API
+  description: |
+    在线投票与社区动态平台 API 文档。
+
+    **认证方式**：Bearer Token (JWT)
+    **基础 URL**：https://votehub.silentnrtx.top/api
+
+    ## 认证流程
+
+    1. 调用 `POST /auth/login` 获取 session
+    2. 或通过 NextAuth GitHub OAuth 登录
+    3. 请求头携带 `Authorization: Bearer <token>`
+
+    ## 响应格式
+
+    - 成功：`{ data: T, pagination?: Pagination }`
+    - 错误：`{ error: string }`
+  version: "1.0.0"
+  contact:
+    name: Silentnrtx
+    url: https://github.com/Chinasd1st
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://votehub.silentnrtx.top/api
+    description: 生产环境
+  - url: http://localhost:3000/api
+    description: 本地开发
+
+security: []
+
+tags:
+  - name: Auth
+    description: 认证相关
+  - name: Polls
+    description: 投票管理
+  - name: Votes
+    description: 投票操作
+  - name: Poll Comments
+    description: 投票评论
+  - name: Posts
+    description: 推文管理
+  - name: Post Comments
+    description: 推文评论
+  - name: Post Likes
+    description: 推文点赞
+  - name: Profile
+    description: 用户资料
+  - name: Follows
+    description: 关注系统
+  - name: Notifications
+    description: 通知系统
+  - name: Sessions
+    description: 登录设备管理
+  - name: Bindings
+    description: 账号绑定
+  - name: Topics
+    description: 主题分类
+  - name: Admin
+    description: 管理后台
+  - name: Settings
+    description: 账号设置
+  - name: Utility
+    description: 工具接口
+
+paths:
+  /auth/login:
+    $ref: "./paths/auth.yaml#/~1auth~1login"
+  /users:
+    $ref: "./paths/auth.yaml#/~1users"
+  /polls:
+    $ref: "./paths/polls.yaml#/~1polls"
+  /polls/{id}:
+    $ref: "./paths/polls.yaml#/~1polls~1{id}"
+  /polls/{id}/vote:
+    $ref: "./paths/votes.yaml#/~1polls~1{id}~1vote"
+  /polls/{id}/comments:
+    $ref: "./paths/poll-comments.yaml#/~1polls~1{id}~1comments"
+  /polls/{id}/clone:
+    $ref: "./paths/poll-operations.yaml#/~1polls~1{id}~1clone"
+  /polls/{id}/export:
+    $ref: "./paths/poll-operations.yaml#/~1polls~1{id}~1export"
+  /polls/{id}/share:
+    $ref: "./paths/poll-operations.yaml#/~1polls~1{id}~1share"
+  /posts:
+    $ref: "./paths/posts.yaml#/~1posts"
+  /posts/{id}:
+    $ref: "./paths/posts.yaml#/~1posts~1{id}"
+  /posts/{id}/likes:
+    $ref: "./paths/post-operations.yaml#/~1posts~1{id}~1likes"
+  /posts/{id}/comments:
+    $ref: "./paths/post-operations.yaml#/~1posts~1{id}~1comments"
+  /profile:
+    $ref: "./paths/profile.yaml#/~1profile"
+  /profile/password:
+    $ref: "./paths/profile.yaml#/~1profile~1password"
+  /profile/{id}:
+    $ref: "./paths/profile.yaml#/~1profile~1{id}"
+  /profile/{id}/followers:
+    $ref: "./paths/profile.yaml#/~1profile~1{id}~1followers"
+  /profile/{id}/following:
+    $ref: "./paths/profile.yaml#/~1profile~1{id}~1following"
+  /profile/{id}/votes:
+    $ref: "./paths/profile.yaml#/~1profile~1{id}~1votes"
+  /follows/{id}:
+    $ref: "./paths/follows.yaml#/~1follows~1{id}"
+  /notifications:
+    $ref: "./paths/notifications.yaml#/~1notifications"
+  /sessions:
+    $ref: "./paths/sessions.yaml#/~1sessions"
+  /sessions/{id}:
+    $ref: "./paths/sessions.yaml#/~1sessions~1{id}"
+  /bindings:
+    $ref: "./paths/bindings.yaml#/~1bindings"
+  /bindings/{id}:
+    $ref: "./paths/bindings.yaml#/~1bindings~1{id}"
+  /topics:
+    $ref: "./paths/topics.yaml#/~1topics"
+  /admin/users:
+    $ref: "./paths/admin.yaml#/~1admin~1users"
+  /admin/stats:
+    $ref: "./paths/admin.yaml#/~1admin~1stats"
+  /settings/email:
+    $ref: "./paths/settings.yaml#/~1settings~1email"
+  /settings/oauth:
+    $ref: "./paths/settings.yaml#/~1settings~1oauth"
+  /settings/oauth/{provider}:
+    $ref: "./paths/settings.yaml#/~1settings~1oauth~1{provider}"
+  /turnstile:
+    $ref: "./paths/settings.yaml#/~1turnstile"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: NextAuth JWT Session Token
+
+  schemas:
+    Pagination:
+      $ref: "./schemas/common.yaml#/Pagination"
+    ErrorResponse:
+      $ref: "./schemas/common.yaml#/ErrorResponse"
+    UserSummary:
+      $ref: "./schemas/user.yaml#/UserSummary"
+    UserProfile:
+      $ref: "./schemas/user.yaml#/UserProfile"
+    PollSummary:
+      $ref: "./schemas/poll.yaml#/PollSummary"
+    PollDetail:
+      $ref: "./schemas/poll.yaml#/PollDetail"
+    PollOption:
+      $ref: "./schemas/poll.yaml#/PollOption"
+    PostSummary:
+      $ref: "./schemas/post.yaml#/PostSummary"
+    Comment:
+      $ref: "./schemas/comment.yaml#/Comment"
+    Notification:
+      $ref: "./schemas/notification.yaml#/Notification"
+    Topic:
+      $ref: "./schemas/topic.yaml#/Topic"
+    LoginSession:
+      $ref: "./schemas/session.yaml#/LoginSession"
+    Binding:
+      $ref: "./schemas/binding.yaml#/Binding"
+    AdminStats:
+      $ref: "./schemas/admin.yaml#/AdminStats"
+
+  responses:
+    UnauthorizedError:
+      $ref: "./schemas/common.yaml#/UnauthorizedError"
+    ForbiddenError:
+      $ref: "./schemas/common.yaml#/ForbiddenError"
+    NotFoundError:
+      $ref: "./schemas/common.yaml#/NotFoundError"

@@ -1,0 +1,20 @@
+Comment:
+  type: object
+  properties:
+    id:
+      type: string
+    content:
+      type: string
+    author:
+      $ref: "../openapi.yaml#/components/schemas/UserSummary"
+    parentId:
+      type: ["string", "null"]
+    replyTo:
+      type: ["object", "null"]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    createdAt:
+      type: integer

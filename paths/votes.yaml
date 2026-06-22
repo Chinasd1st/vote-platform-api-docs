@@ -1,0 +1,179 @@
+/polls/{id}/vote:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 投票 ID
+
+  get:
+    tags: [Votes]
+    summary: 获取当前用户投票状态
+    operationId: getPollVote
+    security:
+      - BearerAuth: []
+    description: |
+      返回当前用户对该投票的投票记录。
+
+      **返回格式（按投票类型）：**
+      - `single/multiple` - 返回 `{ votes: [optionId] }`
+      - `ranked` - 返回 `{ rankings: [{ optionId, rank }] }`
+      - `weighted` - 返回 `{ weights: [{ optionId, weight }] }`
+      - 未登录返回空数组
+    responses:
+      "200":
+        description: 成功返回当前用户的投票记录
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  title: 单选/多选投票记录
+                  properties:
+                    votes:
+                      type: array
+                      items:
+                        type: string
+                      description: 已选的选项 ID 列表
+                - type: object
+                  title: 排序投票记录
+                  properties:
+                    rankings:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          optionId:
+                            type: string
+                          rank:
+                            type: integer
+                            description: 排名（1 = 最高）
+                - type: object
+                  title: 加权投票记录
+                  properties:
+                    weights:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          optionId:
+                            type: string
+                          weight:
+                            type: integer
+                            description: 分配的权重（0-100）
+
+  post:
+    tags: [Votes]
+    summary: 提交投票
+    operationId: submitVote
+    security:
+      - BearerAuth: []
+    description: |
+      根据投票类型提交不同格式的投票数据。
+
+      **投票类型对应格式：**
+
+      | 类型 | 字段 | 格式 |
+      |------|------|------|
+      | `single` | `optionId` | 单个选项 ID |
+      | `multiple` | `optionId` | 逗号分隔的选项 ID |
+      | `ranked` | `rankings` | `[{ optionId, rank }]`，rank 从 1 开始连续 |
+      | `weighted` | `weights` | `[{ optionId, weight }]`，总分不超过 100 |
+      | `approval` | `rankings` | rank: 1 赞成 / 0 中立 / -1 反对 |
+
+      **注意事项：**
+      - 每个用户只能投票一次
+      - 投票后可以修改（覆盖）
+      - 需要 Turnstile 验证
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - type: object
+                title: 单选投票
+                required: [optionId]
+                properties:
+                  optionId:
+                    type: string
+                    description: 选项 ID
+                  turnstileToken:
+                    type: string
+                    description: Turnstile 验证 token
+              - type: object
+                title: 多选投票
+                required: [optionId]
+                properties:
+                  optionId:
+                    type: string
+                    description: 逗号分隔的选项 ID
+                  turnstileToken:
+                    type: string
+                    description: Turnstile 验证 token
+              - type: object
+                title: 排序投票
+                required: [rankings]
+                properties:
+                  rankings:
+                    type: array
+                    items:
+                      type: object
+                      required: [optionId, rank]
+                      properties:
+                        optionId:
+                          type: string
+                          description: 选项 ID
+                        rank:
+                          type: integer
+                          minimum: 1
+                          description: 排名（1 = 最高）
+                  turnstileToken:
+                    type: string
+                    description: Turnstile 验证 token
+              - type: object
+                title: 加权投票
+                required: [weights]
+                properties:
+                  weights:
+                    type: array
+                    items:
+                      type: object
+                      required: [optionId, weight]
+                      properties:
+                        optionId:
+                          type: string
+                          description: 选项 ID
+                        weight:
+                          type: integer
+                          minimum: 0
+                          maximum: 100
+                          description: 权重（0-100）
+                  turnstileToken:
+                    type: string
+                    description: Turnstile 验证 token
+    responses:
+      "200":
+        description: 投票成功（或更新成功）
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "400":
+        description: |
+          投票失败：
+          - 投票未开启
+          - 投票已结束
+          - 重复投票（未登录用户）
+          - 选项 ID 无效
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/ErrorResponse"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"

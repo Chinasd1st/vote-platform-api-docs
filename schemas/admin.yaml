@@ -1,0 +1,31 @@
+AdminStats:
+  type: object
+  properties:
+    totals:
+      type: object
+      properties:
+        polls:
+          type: integer
+        users:
+          type: integer
+        votes:
+          type: integer
+        topics:
+          type: integer
+    trends:
+      type: array
+      items:
+        type: object
+        properties:
+          date:
+            type: string
+          polls:
+            type: integer
+          votes:
+            type: integer
+          users:
+            type: integer
+    topPolls:
+      type: array
+      items:
+        $ref: "../openapi.yaml#/components/schemas/PollSummary"

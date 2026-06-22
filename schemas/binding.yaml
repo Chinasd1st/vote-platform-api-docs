@@ -1,0 +1,14 @@
+Binding:
+  type: object
+  properties:
+    id:
+      type: string
+    user:
+      $ref: "../openapi.yaml#/components/schemas/UserSummary"
+    status:
+      type: string
+      enum: [pending, accepted, rejected]
+    mainUserId:
+      type: ["string", "null"]
+    createdAt:
+      type: integer

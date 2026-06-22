@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>恶俗投票平台 API 文档</title>
+  <meta name="description" content="恶俗投票平台 OpenAPI 接口文档">
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  <script>
+    Scalar.createApiReference('#app', {
+      url: './openapi.json',
+      layout: 'modern',
+      defaultOpenAllTags: true,
+      hideClientButton: false,
+      showSidebar: true,
+      showDeveloperTools: 'localhost',
+      showToolbar: 'localhost',
+      operationTitleSource: 'summary',
+      theme: 'purple',
+      persistAuth: false,
+      telemetry: true,
+      externalUrls: {
+        dashboardUrl: 'https://dashboard.scalar.com',
+        registryUrl: 'https://registry.scalar.com',
+        proxyUrl: 'https://proxy.scalar.com',
+        apiBaseUrl: 'https://api.scalar.com',
+      },
+      default: false,
+      isEditable: false,
+      hideModels: false,
+      documentDownloadType: 'both',
+      hideTestRequestButton: false,
+      hideSearch: false,
+      showOperationId: false,
+      hideDarkModeToggle: false,
+      withDefaultFonts: true,
+      defaultOpenFirstTag: true,
+      expandAllModelSections: false,
+      expandAllResponses: false,
+      expandAllSchemaProperties: false,
+      orderSchemaPropertiesBy: 'alpha',
+      orderRequiredPropertiesFirst: true,
+      modelsSectionLabel: 'Models',
+      slug: 'api-1',
+      title: '恶俗投票平台 API',
+    })
+  </script>
+</body>
+</html>

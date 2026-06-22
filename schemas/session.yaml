@@ -1,0 +1,11 @@
+LoginSession:
+  type: object
+  properties:
+    id:
+      type: string
+    device:
+      type: string
+    ip:
+      type: string
+    createdAt:
+      type: integer

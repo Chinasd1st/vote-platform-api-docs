@@ -1,0 +1,234 @@
+/settings/email:
+  put:
+    tags: [Settings]
+    summary: 修改邮箱
+    operationId: updateEmail
+    security:
+      - BearerAuth: []
+    description: |
+      修改当前用户的登录邮箱。
+
+      **验证要求：**
+      - 如果用户设置了密码，需要提供当前密码验证
+      - 未设置密码的用户可以直接修改
+
+      **修改后：**
+      - 新邮箱需要验证
+      - 验证完成前旧邮箱仍然有效
+
+      **限制：**
+      - 新邮箱必须是有效邮箱
+      - 新邮箱不能已被注册
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [newEmail]
+            properties:
+              currentPassword:
+                type: string
+                description: 当前密码（如果设置了密码则必填）
+              newEmail:
+                type: string
+                format: email
+                description: 新邮箱地址
+    responses:
+      "200":
+        description: 邮箱修改请求已发送
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    success:
+                      type: boolean
+                      description: 操作是否成功
+                    email:
+                      type: string
+                      description: 新邮箱地址
+      "400":
+        description: 新邮箱无效或已被注册
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/settings/oauth:
+  get:
+    tags: [Settings]
+    summary: 获取 OAuth 绑定状态
+    operationId: getOAuthStatus
+    security:
+      - BearerAuth: []
+    description: |
+      获取当前用户的 OAuth 账号绑定状态。
+
+      **支持的 OAuth 提供商：**
+      - GitHub
+
+      **返回内容：**
+      - 提供商名称
+      - 是否已绑定
+      - 提供商用户 ID（如果已绑定）
+    responses:
+      "200":
+        description: 成功返回 OAuth 绑定状态
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      provider:
+                        type: string
+                        enum: [github]
+                        description: OAuth 提供商
+                      bound:
+                        type: boolean
+                        description: 是否已绑定
+                      providerUserId:
+                        type: ["string", "null"]
+                        description: 提供商用户 ID（未绑定时为 null）
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+  post:
+    tags: [Settings]
+    summary: 发起 OAuth 绑定
+    operationId: bindOAuth
+    security:
+      - BearerAuth: []
+    description: |
+      发起 OAuth 账号绑定流程。
+
+      **流程：**
+      1. 调用此接口获取 OAuth 授权 URL
+      2. 用户在浏览器中访问该 URL
+      3. 用户授权后自动绑定
+
+      **限制：**
+      - 每个 OAuth 账号只能绑定一个平台账号
+      - 已绑定的 OAuth 账号不能重复绑定
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [provider]
+            properties:
+              provider:
+                type: string
+                enum: [github]
+                description: OAuth 提供商
+    responses:
+      "200":
+        description: 返回 OAuth 授权 URL
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    authUrl:
+                      type: string
+                      format: uri
+                      description: OAuth 授权 URL
+      "400":
+        description: 该 OAuth 账号已被其他用户绑定
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/settings/oauth/{provider}:
+  parameters:
+    - name: provider
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [github]
+      description: OAuth 提供商
+  delete:
+    tags: [Settings]
+    summary: 解绑 OAuth
+    operationId: unbindOAuth
+    security:
+      - BearerAuth: []
+    description: |
+      解除 OAuth 账号绑定。
+
+      **安全检查：**
+      - 确保至少保留一种登录方式
+      - 如果只有一种登录方式，需要先设置密码
+
+      **影响：**
+      - 解绑后无法使用该 OAuth 账号登录
+      - 不影响已发布的投票和推文
+    responses:
+      "200":
+        description: 解绑成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    success:
+                      type: boolean
+                      description: 操作是否成功
+      "400":
+        description: 无法解绑（只剩一种登录方式）
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/turnstile:
+  post:
+    tags: [Utility]
+    summary: 验证 Cloudflare Turnstile
+    operationId: verifyTurnstile
+    description: |
+      验证 Cloudflare Turnstile 人机验证 token。
+
+      **使用场景：**
+      - 注册时验证
+      - 投票时验证
+      - 其他需要防机器人操作的场景
+
+      **验证流程：**
+      1. 前端加载 Turnstile 组件
+      2. 用户完成验证
+      3. 前端获取 token
+      4. 调用此接口验证 token
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            properties:
+              token:
+                type: string
+                description: Turnstile 验证 token
+    responses:
+      "200":
+        description: 验证结果
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  description: 验证是否通过

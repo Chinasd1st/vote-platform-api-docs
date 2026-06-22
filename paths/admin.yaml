@@ -1,0 +1,143 @@
+/admin/users:
+  get:
+    tags: [Admin]
+    summary: 获取用户列表
+    operationId: adminGetUsers
+    security:
+      - BearerAuth: []
+    description: |
+      分页返回用户列表。
+
+      **权限：**
+      - 仅管理员可调用
+
+      **返回内容：**
+      - 用户基本信息（昵称、头像、简介）
+      - 注册时间
+      - 关注/粉丝数
+
+      **分页：**
+      - 默认每页 20 条，最大 50 条
+      - 按注册时间倒序排列
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+        description: 页码
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+        description: 每页数量
+    responses:
+      "200":
+        description: 成功返回用户列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: "../openapi.yaml#/components/schemas/UserSummary"
+                pagination:
+                  $ref: "../openapi.yaml#/components/schemas/Pagination"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"
+
+  put:
+    tags: [Admin]
+    summary: 更新用户角色
+    operationId: adminUpdateUser
+    security:
+      - BearerAuth: []
+    description: |
+      修改用户的角色权限。
+
+      **权限要求：**
+      - 普通管理员：只能设置 `user` 角色
+      - 站长（superadmin）：可以设置任何角色
+
+      **角色说明：**
+      - `user` - 普通用户
+      - `admin` - 管理员
+      - `superadmin` - 站长（不可更改）
+
+      **限制：**
+      - 站长角色不可更改
+      - 不能修改自己的角色
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [userId, role]
+            properties:
+              userId:
+                type: string
+                format: uuid
+                description: 用户 ID
+              role:
+                type: string
+                enum: [admin, user]
+                description: |
+                  目标角色：
+                  - `user` - 普通用户
+                  - `admin` - 管理员（需要站长权限）
+    responses:
+      "200":
+        description: 角色更新成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "403":
+        description: |
+          权限不足：
+          - 不是管理员
+          - 无权修改站长角色
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+/admin/stats:
+  get:
+    tags: [Admin]
+    summary: 获取平台统计数据
+    operationId: adminGetStats
+    security:
+      - BearerAuth: []
+    description: |
+      返回平台运营统计数据。
+
+      **权限：**
+      - 仅管理员可调用
+
+      **统计数据：**
+
+      | 类别 | 数据 |
+      |------|------|
+      | 总量统计 | 用户数、投票数、总票数、推文数、评论数、主题数、进行中投票数 |
+      | 7 天趋势 | 每日新增用户、投票、票数 |
+      | 热门投票 | 票数 Top 5 的投票 |
+    responses:
+      "200":
+        description: 成功返回统计数据
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: "../openapi.yaml#/components/schemas/AdminStats"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"

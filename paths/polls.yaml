@@ -1,0 +1,329 @@
+/polls:
+  get:
+    tags: [Polls]
+    summary: 获取投票列表
+    operationId: getPolls
+    description: |
+      返回非草稿状态的投票列表，支持搜索和主题筛选。
+
+      **排序规则：**
+      - 置顶投票优先
+      - 按创建时间倒序
+
+      **分页：**
+      - 默认每页 10 条，最大 50 条
+      - 返回 `pagination` 对象包含 `page`、`limit`、`total`、`totalPages`
+
+      **搜索：**
+      - `q` 参数匹配投票标题或描述
+      - `topic` 参数按主题 slug 筛选（精确匹配）
+    parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+        description: 搜索关键词（模糊匹配标题或描述）
+        example: "编程"
+      - name: topic
+        in: query
+        schema:
+          type: string
+        description: 主题 slug 筛选
+        example: "技术"
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+        description: 页码
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 50
+        description: 每页数量
+    responses:
+      "200":
+        description: 成功返回投票列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: "../openapi.yaml#/components/schemas/PollSummary"
+                pagination:
+                  $ref: "../openapi.yaml#/components/schemas/Pagination"
+
+  post:
+    tags: [Polls]
+    summary: 创建新投票
+    operationId: createPoll
+    security:
+      - BearerAuth: []
+    description: |
+      创建新的投票。
+
+      **投票类型说明：**
+      - `single` - 单选（默认）
+      - `multiple` - 多选
+      - `ranked` - 排名投票
+      - `approval` - 批准投票
+      - `weighted` - 加权投票
+
+      **创建后行为：**
+      - 默认状态为 `draft`（草稿）
+      - 草稿状态仅作者可见
+      - 设置 `status: active` 后其他用户可见
+
+      **选项限制：**
+      - 最少 2 个选项
+      - 最多 20 个选项
+      - 每个选项最长 100 字符
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [title, options]
+            properties:
+              title:
+                type: string
+                minLength: 1
+                maxLength: 200
+                description: 投票标题
+                example: "你最喜欢的编程语言？"
+              description:
+                type: string
+                maxLength: 2000
+                description: 投票描述（可选）
+              topicId:
+                type: ["string", "null"]
+                format: uuid
+                description: 主题 ID（可选）
+              type:
+                type: string
+                enum: [single, multiple, ranked, approval, weighted]
+                default: single
+                description: 投票类型
+              status:
+                type: string
+                enum: [draft, active, closed]
+                default: draft
+                description: 初始状态
+              startsAt:
+                type: ["string", "null"]
+                format: date-time
+                description: 开始时间（可选）
+              endsAt:
+                type: ["string", "null"]
+                format: date-time
+                description: 结束时间（可选）
+              options:
+                type: array
+                items:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                minItems: 2
+                maxItems: 20
+                description: 投票选项列表
+                example: ["TypeScript", "JavaScript", "Rust", "Go"]
+              allowWriteIn:
+                type: boolean
+                default: false
+                description: 是否允许用户添加自定义选项
+              useIRV:
+                type: boolean
+                default: false
+                description: 是否使用即时决选（IRV）算法
+              sortMethod:
+                type: ["string", "null"]
+                enum: [irv, schulze]
+                description: 排序算法（仅 ranked 类型）
+              captchaToken:
+                type: string
+                description: Cloudflare Turnstile 验证 token
+    responses:
+      "201":
+        description: 创建成功，返回新投票 ID
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  description: 新创建的投票 ID
+      "400":
+        description: 参数无效（标题缺失、选项不足等）
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "429":
+        description: 操作过于频繁（每分钟 10 次）
+
+/polls/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 投票 ID
+
+  get:
+    tags: [Polls]
+    summary: 获取投票详情
+    operationId: getPoll
+    description: |
+      返回投票完整信息，包含选项、投票数、评论、IRV/Schulze 结果。
+
+      **返回内容：**
+      - 投票基本信息（标题、描述、类型、状态）
+      - 选项列表及当前投票数
+      - IRV/Schulze 排序结果（如果启用了算法）
+      - 最近评论（最多 10 条）
+
+      **可见性：**
+      - 草稿状态仅作者和管理员可见
+      - 其他状态对所有用户可见
+    responses:
+      "200":
+        description: 成功返回投票详情
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/PollDetail"
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+  put:
+    tags: [Polls]
+    summary: 更新投票
+    operationId: updatePoll
+    security:
+      - BearerAuth: []
+    description: |
+      更新投票信息。
+
+      **权限：**
+      - 仅投票作者或管理员可调用
+
+      **可修改字段（按状态）：**
+      - `draft` - 可修改所有字段，包括选项
+      - `active` - 可修改标题、描述、结束时间，不能修改选项
+      - `closed` - 不能修改任何字段
+
+      **特殊字段：**
+      - `pinned` - 仅管理员可设置置顶
+      - `options` - 仅草稿状态可修改
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+                minLength: 1
+                maxLength: 200
+                description: 投票标题
+              description:
+                type: string
+                maxLength: 2000
+                description: 投票描述
+              topicId:
+                type: ["string", "null"]
+                format: uuid
+                description: 主题 ID
+              type:
+                type: string
+                enum: [single, multiple, ranked, approval, weighted]
+                description: 投票类型
+              status:
+                type: string
+                enum: [active, closed, draft]
+                description: 投票状态
+              endsAt:
+                type: ["string", "null"]
+                format: date-time
+                description: 结束时间
+              allowWriteIn:
+                type: boolean
+                description: 是否允许自定义选项
+              useIRV:
+                type: boolean
+                description: 是否使用 IRV 算法
+              sortMethod:
+                type: ["string", "null"]
+                enum: [irv, schulze]
+                description: 排序算法
+              pinned:
+                type: boolean
+                description: 是否置顶（仅管理员）
+              options:
+                type: array
+                items:
+                  type: string
+                minItems: 2
+                maxItems: 20
+                description: 投票选项（仅草稿状态可修改）
+    responses:
+      "200":
+        description: 更新成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"
+
+  delete:
+    tags: [Polls]
+    summary: 删除投票
+    operationId: deletePoll
+    security:
+      - BearerAuth: []
+    description: |
+      删除投票及其所有关联数据。
+
+      **级联删除：**
+      - 所有选项
+      - 所有投票记录
+      - 所有评论
+      - 所有通知
+
+      **权限：**
+      - 仅投票作者或管理员可调用
+
+      **不可逆操作：**
+      此操作无法撤销，所有数据将被永久删除。
+    responses:
+      "200":
+        description: 删除成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"

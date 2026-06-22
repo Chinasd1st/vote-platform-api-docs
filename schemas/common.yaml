@@ -1,0 +1,51 @@
+Pagination:
+  type: object
+  properties:
+    page:
+      type: integer
+      example: 1
+    limit:
+      type: integer
+      example: 10
+    total:
+      type: integer
+      example: 100
+    totalPages:
+      type: integer
+      example: 10
+
+ErrorResponse:
+  type: object
+  required:
+    - error
+  properties:
+    error:
+      type: string
+      example: "Unauthorized"
+
+UnauthorizedError:
+  description: 未授权 - 需要登录
+  content:
+    application/json:
+      schema:
+        $ref: "../openapi.yaml#/components/schemas/ErrorResponse"
+      example:
+        error: "Unauthorized"
+
+ForbiddenError:
+  description: 无权限
+  content:
+    application/json:
+      schema:
+        $ref: "../openapi.yaml#/components/schemas/ErrorResponse"
+      example:
+        error: "Forbidden"
+
+NotFoundError:
+  description: 资源不存在
+  content:
+    application/json:
+      schema:
+        $ref: "../openapi.yaml#/components/schemas/ErrorResponse"
+      example:
+        error: "Not found"

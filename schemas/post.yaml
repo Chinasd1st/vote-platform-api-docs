@@ -1,0 +1,34 @@
+PostSummary:
+  type: object
+  properties:
+    id:
+      type: string
+    content:
+      type: string
+    images:
+      type: ["array", "null"]
+      items:
+        type: string
+    tags:
+      type: array
+      items:
+        type: string
+    poll:
+      type: ["object", "null"]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+    author:
+      $ref: "../openapi.yaml#/components/schemas/UserSummary"
+    likesCount:
+      type: integer
+    commentsCount:
+      type: integer
+    isLiked:
+      type: boolean
+    createdAt:
+      type: integer

@@ -1,0 +1,15 @@
+Topic:
+  type: object
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    slug:
+      type: string
+    description:
+      type: ["string", "null"]
+    color:
+      type: string
+    pollsCount:
+      type: integer

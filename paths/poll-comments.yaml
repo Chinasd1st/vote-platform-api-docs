@@ -1,0 +1,162 @@
+/polls/{id}/comments:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 投票 ID
+
+  get:
+    tags: [Poll Comments]
+    summary: 获取投票评论列表
+    operationId: getPollComments
+    description: |
+      分页返回投票评论，支持按时间或热度排序。
+
+      **评论结构：**
+      - 顶级评论（`parentId` 为空）
+      - 嵌套回复（最多 3 层深度）
+
+      **排序选项：**
+      - `time` - 按创建时间倒序（默认）
+      - `hot` - 按回复数和点赞数排序
+
+      **分页：**
+      - 默认每页 20 条，最大 50 条
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+        description: 页码
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+        description: 每页数量
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum: [time, hot]
+          default: time
+        description: |
+          排序方式：
+          - `time` - 按时间排序
+          - `hot` - 按热度排序（回复数 + 点赞数）
+    responses:
+      "200":
+        description: 成功返回评论列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    allOf:
+                      - $ref: "../openapi.yaml#/components/schemas/Comment"
+                      - type: object
+                        properties:
+                          user:
+                            $ref: "../openapi.yaml#/components/schemas/UserSummary"
+                            description: 评论作者信息
+                          replyTo:
+                            type: ["string", "null"]
+                            description: 回复的评论 ID（顶级评论为空）
+                          replyToContent:
+                            type: ["string", "null"]
+                            description: 被回复评论的内容（仅回复时）
+                pagination:
+                  $ref: "../openapi.yaml#/components/schemas/Pagination"
+
+  post:
+    tags: [Poll Comments]
+    summary: 发表投票评论
+    operationId: createPollComment
+    security:
+      - BearerAuth: []
+    description: |
+      在投票下发表评论或回复其他评论。
+
+      **评论规则：**
+      - 内容不能为空
+      - 最多 2000 字符
+      - 支持嵌套回复（最多 3 层）
+
+      **回复：**
+      - 提供 `parentId` 回复其他评论
+      - 不提供则为顶级评论
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [content]
+            properties:
+              content:
+                type: string
+                minLength: 1
+                maxLength: 2000
+                description: 评论内容
+              parentId:
+                type: ["string", "null"]
+                format: uuid
+                description: 父评论 ID（可选，用于回复）
+    responses:
+      "201":
+        description: 评论成功
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/Comment"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+  delete:
+    tags: [Poll Comments]
+    summary: 删除投票评论
+    operationId: deletePollComment
+    security:
+      - BearerAuth: []
+    description: |
+      删除投票评论。
+
+      **权限：**
+      - 评论作者可删除自己的评论
+      - 管理员可删除任何评论
+
+      **级联删除：**
+      删除评论时，其所有回复也会被删除。
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [commentId]
+            properties:
+              commentId:
+                type: string
+                description: 要删除的评论 ID
+    responses:
+      "200":
+        description: 删除成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  description: 操作是否成功
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"

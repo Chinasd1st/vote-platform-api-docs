@@ -1,0 +1,89 @@
+/topics:
+  get:
+    tags: [Topics]
+    summary: 获取所有主题
+    operationId: getTopics
+    description: |
+      返回所有主题列表及其投票数量。
+
+      **返回内容：**
+      - 主题名称、slug、描述、颜色
+      - 每个主题的投票数量
+
+      **排序：**
+      - 按投票数量倒序
+      - 无分页限制（主题数量有限）
+    responses:
+      "200":
+        description: 成功返回主题列表
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: "../openapi.yaml#/components/schemas/Topic"
+                  - type: object
+                    properties:
+                      _count:
+                        type: object
+                        description: 主题下的投票数量
+                        properties:
+                          polls:
+                            type: integer
+                            description: 投票数量
+
+  post:
+    tags: [Topics]
+    summary: 创建主题
+    operationId: createTopic
+    security:
+      - BearerAuth: []
+    description: |
+      创建新的主题分类。
+
+      **权限：**
+      - 仅管理员可调用
+
+      **主题属性：**
+      - 名称（唯一，自动转为 slug）
+      - 描述（可选）
+      - 颜色（默认 #6366f1）
+
+      **Slug 生成规则：**
+      - 名称转小写
+      - 空格转连字符
+      - 移除特殊字符
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+                description: 主题名称
+              description:
+                type: ["string", "null"]
+                description: 主题描述
+              color:
+                type: string
+                default: "#6366f1"
+                description: 主题颜色（十六进制色值）
+    responses:
+      "201":
+        description: 创建成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: 新创建的主题 ID
+      "400":
+        description: 主题名称已存在
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"

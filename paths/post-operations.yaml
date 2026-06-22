@@ -1,0 +1,233 @@
+/posts/{id}/likes:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 推文 ID
+
+  post:
+    tags: [Post Likes]
+    summary: 点赞推文
+    operationId: likePost
+    security:
+      - BearerAuth: []
+    description: |
+      点赞推文。
+
+      **行为：**
+      - 通知推文作者
+      - 不可重复点赞
+      - 更新推文点赞计数
+
+      **频率限制：**
+      - 每分钟最多 30 次
+    responses:
+      "200":
+        description: 点赞成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  description: 操作是否成功
+                likesCount:
+                  type: integer
+                  description: 最新的点赞数
+      "400":
+        description: 已经点赞过了
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "429":
+        description: 操作过于频繁（每分钟 30 次）
+
+  delete:
+    tags: [Post Likes]
+    summary: 取消点赞
+    operationId: unlikePost
+    security:
+      - BearerAuth: []
+    description: |
+      取消对推文的点赞。
+
+      **行为：**
+      - 更新推文点赞计数
+      - 不会删除作者的通知
+    responses:
+      "200":
+        description: 取消点赞成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  description: 操作是否成功
+                likesCount:
+                  type: integer
+                  description: 最新的点赞数
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/posts/{id}/comments:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 推文 ID
+
+  get:
+    tags: [Post Comments]
+    summary: 获取推文评论列表
+    operationId: getPostComments
+    description: |
+      分页返回推文评论列表。
+
+      **评论结构：**
+      - 顶级评论（`parentId` 为空）
+      - 嵌套回复（最多 3 层深度）
+
+      **排序：**
+      - 按创建时间倒序
+
+      **额外信息：**
+      - `replyCounts` - 每条评论的回复数
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+        description: 页码
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+        description: 每页数量
+    responses:
+      "200":
+        description: 成功返回评论列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    allOf:
+                      - $ref: "../openapi.yaml#/components/schemas/Comment"
+                      - type: object
+                        properties:
+                          user:
+                            $ref: "../openapi.yaml#/components/schemas/UserSummary"
+                            description: 评论作者信息
+                          replyTo:
+                            type: ["string", "null"]
+                            description: 回复的评论 ID（顶级评论为空）
+                          replyToContent:
+                            type: ["string", "null"]
+                            description: 被回复评论的内容（仅回复时）
+                replyCounts:
+                  type: object
+                  additionalProperties:
+                    type: integer
+                  description: 每条评论的回复数
+                pagination:
+                  $ref: "../openapi.yaml#/components/schemas/Pagination"
+
+  post:
+    tags: [Post Comments]
+    summary: 发表推文评论
+    operationId: createPostComment
+    security:
+      - BearerAuth: []
+    description: |
+      在推文下发表评论或回复其他评论。
+
+      **评论规则：**
+      - 内容不能为空
+      - 最多 2000 字符
+      - 支持嵌套回复（最多 3 层）
+
+      **回复：**
+      - 提供 `parentId` 回复其他评论
+      - 不提供则为顶级评论
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [content]
+            properties:
+              content:
+                type: string
+                minLength: 1
+                maxLength: 2000
+                description: 评论内容
+              parentId:
+                type: ["string", "null"]
+                format: uuid
+                description: 父评论 ID（可选，用于回复）
+    responses:
+      "201":
+        description: 评论成功
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/Comment"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "429":
+        description: 评论过于频繁（每分钟 10 次）
+
+  delete:
+    tags: [Post Comments]
+    summary: 删除推文评论
+    operationId: deletePostComment
+    security:
+      - BearerAuth: []
+    description: |
+      删除推文评论。
+
+      **权限：**
+      - 评论作者可删除自己的评论
+      - 管理员可删除任何评论
+
+      **级联删除：**
+      删除评论时，其所有回复也会被删除。
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [commentId]
+            properties:
+              commentId:
+                type: string
+                description: 要删除的评论 ID
+    responses:
+      "200":
+        description: 删除成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  description: 操作是否成功
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"

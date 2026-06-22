@@ -1,0 +1,46 @@
+UserSummary:
+  type: object
+  properties:
+    id:
+      type: string
+      example: "abc-123"
+    name:
+      type: string
+      example: "测试用户"
+    email:
+      type: string
+      example: "user@vote.com"
+    avatar:
+      type: ["string", "null"]
+      example: "https://example.com/avatar.png"
+    role:
+      type: string
+      enum: [user, admin]
+      example: "user"
+
+UserProfile:
+  allOf:
+    - $ref: "../openapi.yaml#/components/schemas/UserSummary"
+    - type: object
+      properties:
+        slug:
+          type: integer
+          example: 1001
+        bio:
+          type: ["string", "null"]
+        banner:
+          type: ["string", "null"]
+        socialLinks:
+          type: ["object", "null"]
+        followerCount:
+          type: integer
+          example: 42
+        followingCount:
+          type: integer
+          example: 10
+        isFollowing:
+          type: boolean
+          example: false
+        createdPolls:
+          type: integer
+          example: 5

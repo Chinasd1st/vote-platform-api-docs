@@ -1,0 +1,246 @@
+/posts:
+  get:
+    tags: [Posts]
+    summary: 获取推文列表
+    operationId: getPosts
+    description: |
+      返回推文列表，支持按用户、标签筛选，按时间或热度排序。
+
+      **排序选项：**
+      - `latest` - 按创建时间倒序（默认）
+      - `hot` - 按热度排序（点赞数 x2 + 评论数）
+
+      **筛选：**
+      - `userId` - 筛选指定用户发布的推文
+      - `tag` - 筛选包含指定话题标签的推文
+
+      **分页：**
+      - 默认每页 20 条，最大 50 条
+    parameters:
+      - name: userId
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: 按用户 ID 筛选
+      - name: tag
+        in: query
+        schema:
+          type: string
+        description: 按话题标签筛选
+        example: "投票"
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum: [latest, hot]
+          default: latest
+        description: |
+          排序方式：
+          - `latest` - 按时间倒序
+          - `hot` - 按热度排序（点赞x2 + 评论数）
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+        description: 页码
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+        description: 每页数量
+    responses:
+      "200":
+        description: 成功返回推文列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: "../openapi.yaml#/components/schemas/PostSummary"
+                pagination:
+                  $ref: "../openapi.yaml#/components/schemas/Pagination"
+
+  post:
+    tags: [Posts]
+    summary: 发表推文
+    operationId: createPost
+    security:
+      - BearerAuth: []
+    description: |
+      发表新的推文。
+
+      **话题标签：**
+      - 自动从内容中提取 `#标签`
+      - 标签最多 20 个字符
+      - 每篇推文最多 10 个标签
+      - 标签转为小写存储
+
+      **图片限制：**
+      - 最多 9 张图片
+      - 图片必须是有效的 URL
+
+      **关联投票：**
+      - 可选关联已有投票
+      - 关联后推文会显示投票卡片
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [content]
+            properties:
+              content:
+                type: string
+                minLength: 1
+                maxLength: 500
+                description: 推文内容（最多 500 字符）
+                example: "分享一个有趣的投票 #投票 #编程"
+              images:
+                type: array
+                items:
+                  type: string
+                  format: uri
+                maxItems: 9
+                description: 图片 URL 列表（最多 9 张）
+              pollId:
+                type: string
+                format: uuid
+                description: 关联的投票 ID（可选）
+    responses:
+      "201":
+        description: 发布成功
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/PostSummary"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "429":
+        description: 发布过于频繁（每分钟 5 次）
+
+/posts/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 推文 ID
+
+  get:
+    tags: [Posts]
+    summary: 获取推文详情
+    operationId: getPost
+    description: |
+      返回推文完整信息。
+
+      **额外字段（相比列表）：**
+      - `isLiked` - 当前用户是否点赞（未登录返回 false）
+      - 完整的图片列表
+      - 关联的投票信息
+    responses:
+      "200":
+        description: 成功返回推文详情
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yaml#/components/schemas/PostSummary"
+                - type: object
+                  properties:
+                    isLiked:
+                      type: boolean
+                      description: 当前用户是否点赞
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+  put:
+    tags: [Posts]
+    summary: 更新推文
+    operationId: updatePost
+    security:
+      - BearerAuth: []
+    description: |
+      更新推文内容。
+
+      **权限：**
+      - 仅推文作者可调用
+
+      **更新规则：**
+      - 只能修改内容
+      - 自动重新提取话题标签
+      - 不能修改关联的投票
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [content]
+            properties:
+              content:
+                type: string
+                minLength: 1
+                maxLength: 500
+                description: 新的推文内容
+    responses:
+      "200":
+        description: 更新成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: 推文 ID
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"
+
+  delete:
+    tags: [Posts]
+    summary: 删除推文
+    operationId: deletePost
+    security:
+      - BearerAuth: []
+    description: |
+      删除推文及其所有关联数据。
+
+      **级联删除：**
+      - 所有图片引用
+      - 所有点赞记录
+      - 所有评论（如果支持）
+
+      **权限：**
+      - 仅推文作者或管理员可调用
+
+      **不可逆操作：**
+      此操作无法撤销。
+    responses:
+      "200":
+        description: 删除成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  description: 操作是否成功
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"

@@ -1,0 +1,170 @@
+/bindings:
+  get:
+    tags: [Bindings]
+    summary: 获取账号绑定列表
+    operationId: getBindings
+    security:
+      - BearerAuth: []
+    description: |
+      返回当前用户的所有账号绑定记录。
+
+      **绑定类型：**
+      - `main` - 主账号（只能有一个）
+      - `sub` - 子账号（可以有多个）
+
+      **绑定状态：**
+      - `pending` - 待确认
+      - `accepted` - 已接受
+      - `rejected` - 已拒绝
+    responses:
+      "200":
+        description: 成功返回绑定列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: "../openapi.yaml#/components/schemas/Binding"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+  post:
+    tags: [Bindings]
+    summary: 发送绑定请求
+    operationId: createBinding
+    security:
+      - BearerAuth: []
+    description: |
+      向指定邮箱发送账号绑定请求。
+
+      **绑定流程：**
+      1. 输入目标邮箱
+      2. 系统发送绑定确认邮件
+      3. 目标邮箱用户确认绑定
+      4. 绑定关系建立
+
+      **限制：**
+      - 目标邮箱不能是当前邮箱
+      - 目标邮箱必须已注册
+      - 每个邮箱只能绑定一个账号
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [targetEmail]
+            properties:
+              targetEmail:
+                type: string
+                format: email
+                description: 要绑定的目标邮箱
+    responses:
+      "200":
+        description: 绑定请求已发送
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                id:
+                  type: string
+                  description: 绑定记录 ID
+      "400":
+        description: 目标邮箱无效或已绑定
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/bindings/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 绑定记录 ID
+
+  put:
+    tags: [Bindings]
+    summary: 处理绑定请求
+    operationId: handleBinding
+    security:
+      - BearerAuth: []
+    description: |
+      处理收到的绑定请求。
+
+      **操作选项：**
+      - `accept` - 接受绑定请求
+      - `reject` - 拒绝绑定请求
+      - `setMain` - 设置为主账号（仅主账号可操作）
+
+      **主账号切换：**
+      - `setMain` 操作会将当前主账号变为子账号
+      - 原子账号变为主账号
+      - 需要提供 `mainUserId` 参数
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [action]
+            properties:
+              action:
+                type: string
+                enum: [accept, reject, setMain]
+                description: 绑定操作
+              mainUserId:
+                type: ["string", "null"]
+                description: 主账号 ID（仅 setMain 操作需要）
+    responses:
+      "200":
+        description: 操作成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "400":
+        description: 无效操作或参数
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+  delete:
+    tags: [Bindings]
+    summary: 解绑账号
+    operationId: deleteBinding
+    security:
+      - BearerAuth: []
+    description: |
+      解除两个账号之间的绑定关系。
+
+      **行为：**
+      - 删除绑定记录
+      - 两个账号变为独立账号
+
+      **限制：**
+      - 主账号不能被解绑
+      - 只能解绑自己账号的绑定
+    responses:
+      "200":
+        description: 解绑成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
