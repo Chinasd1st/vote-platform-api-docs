@@ -12,7 +12,7 @@ function loadFile(path) {
 
 function resolveRef(basePath, ref) {
   const [file, pointer] = ref.split('#')
-  const filePath = resolve(dirname(basePath), file)
+  const filePath = file ? resolve(dirname(basePath), file) : basePath
   const data = loadFile(filePath)
 
   if (!pointer) return data
