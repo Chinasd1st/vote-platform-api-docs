@@ -5,12 +5,125 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>恶俗投票平台 API 文档</title>
   <meta name="description" content="恶俗投票平台 OpenAPI 接口文档">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d0f1a; color: #e0e0e0; }
+    .hero { max-width: 960px; margin: 0 auto; padding: 48px 24px 24px; }
+    .hero h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+    .hero p { font-size: 14px; color: #999; margin-bottom: 24px; }
+    .hero .meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .hero .meta span { font-size: 12px; padding: 4px 10px; border-radius: 6px; background: rgba(139,92,246,0.15); color: #a78bfa; }
+    .diagram-section { margin-top: 16px; }
+    .diagram-section h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #ccc; }
+    .diagram-wrap { background: #161825; border: 1px solid #2a2d3e; border-radius: 12px; padding: 24px; overflow-x: auto; }
+    .diagram-wrap svg { max-width: 100%; }
+    .tables { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+    .tables table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tables th, .tables td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #2a2d3e; }
+    .tables th { color: #a78bfa; font-weight: 600; }
+    .tables td { color: #ccc; }
+    .tables .code { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; background: #1e2030; padding: 2px 6px; border-radius: 4px; }
+    @media (max-width: 640px) { .tables { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
+  <div class="hero">
+    <h1>恶俗投票平台 API</h1>
+    <p>在线投票与社区动态平台 RESTful API</p>
+    <div class="meta">
+      <span>OpenAPI 3.1</span>
+      <span>JWT Bearer Auth</span>
+      <span>v1.0.0</span>
+      <span>MIT License</span>
+    </div>
+
+    <div class="diagram-section">
+      <h2>认证流程</h2>
+      <div class="diagram-wrap">
+        <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as 用户
+  participant C as 客户端
+  participant S as 服务器
+
+  U->>C: 输入邮箱 + 密码
+  C->>S: POST /auth/login
+  S-->>C: 200 { success: true }
+  Note over C: 保存 JWT cookie
+  C->>S: GET /profile (带 cookie)
+  S-->>C: 200 { data: UserProfile }
+  C-->>U: 显示用户信息
+        </pre>
+      </div>
+    </div>
+
+    <div class="diagram-section">
+      <h2>投票流程</h2>
+      <div class="diagram-wrap">
+        <pre class="mermaid">
+flowchart LR
+  A[创建投票] --> B{投票类型}
+  B -->|单选| C[选择 1 个选项]
+  B -->|多选| D[选择多个选项]
+  B -->|排序| E[拖拽排序]
+  B -->|加权| F[分配权重]
+  C --> G[提交投票]
+  D --> G
+  E --> G
+  F --> G
+  G --> H[实时计票]
+  H --> I[IRV/Schulze 算法]
+        </pre>
+      </div>
+    </div>
+
+    <div class="tables">
+      <table>
+        <tr><th>HTTP 状态码</th><th>含义</th></tr>
+        <tr><td><span class="code">400</span></td><td>请求无效</td></tr>
+        <tr><td><span class="code">401</span></td><td>未认证</td></tr>
+        <tr><td><span class="code">403</span></td><td>无权限</td></tr>
+        <tr><td><span class="code">404</span></td><td>资源不存在</td></tr>
+        <tr><td><span class="code">429</span></td><td>请求过于频繁</td></tr>
+      </table>
+      <table>
+        <tr><th>接口</th><th>频率限制</th></tr>
+        <tr><td><span class="code">POST /auth/login</span></td><td>5 次/分钟</td></tr>
+        <tr><td><span class="code">POST /users</span></td><td>2 次/分钟</td></tr>
+        <tr><td><span class="code">POST /polls</span></td><td>10 次/分钟</td></tr>
+        <tr><td><span class="code">POST /posts</span></td><td>5 次/分钟</td></tr>
+        <tr><td><span class="code">POST /likes</span></td><td>30 次/分钟</td></tr>
+      </table>
+    </div>
+  </div>
+
   <div id="app"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
   <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#8b5cf6',
+        primaryTextColor: '#e0e0e0',
+        primaryBorderColor: '#6d28d9',
+        lineColor: '#6d28d9',
+        secondaryColor: '#1e1b4b',
+        tertiaryColor: '#161825',
+        noteBkgColor: '#1e1b4b',
+        noteTextColor: '#e0e0e0',
+        noteBorderColor: '#6d28d9',
+        actorTextColor: '#e0e0e0',
+        actorBkg: '#1e1b4b',
+        actorBorder: '#6d28d9',
+        signalColor: '#e0e0e0',
+        signalTextColor: '#e0e0e0',
+      },
+    })
+
     Scalar.createApiReference('#app', {
       url: './openapi.json',
       layout: 'modern',
