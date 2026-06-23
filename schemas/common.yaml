@@ -28,7 +28,7 @@ UnauthorizedError:
   content:
     application/json:
       schema:
-        $ref: "../openapi.yaml#/components/schemas/ErrorResponse"
+        $ref: "#/ErrorResponse"
       example:
         error: "Unauthorized"
 
@@ -37,7 +37,7 @@ ForbiddenError:
   content:
     application/json:
       schema:
-        $ref: "../openapi.yaml#/components/schemas/ErrorResponse"
+        $ref: "#/ErrorResponse"
       example:
         error: "Forbidden"
 
@@ -46,6 +46,6 @@ NotFoundError:
   content:
     application/json:
       schema:
-        $ref: "../openapi.yaml#/components/schemas/ErrorResponse"
+        $ref: "#/ErrorResponse"
       example:
         error: "Not found"
