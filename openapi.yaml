@@ -152,6 +152,8 @@ paths:
     $ref: "./paths/poll-operations.yaml#/~1polls~1{id}~1export"
   /polls/{id}/share:
     $ref: "./paths/poll-operations.yaml#/~1polls~1{id}~1share"
+  /polls/{id}/bookmark:
+    $ref: "./paths/poll-operations.yaml#/~1polls~1{id}~1bookmark"
   /posts:
     $ref: "./paths/posts.yaml#/~1posts"
   /posts/{id}:

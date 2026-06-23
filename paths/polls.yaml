@@ -147,6 +147,10 @@
                 type: ["string", "null"]
                 enum: [irv, schulze]
                 description: 排序算法（仅 ranked 类型）
+              anonymous:
+                type: boolean
+                default: false
+                description: 是否开启匿名投票模式
               captchaToken:
                 type: string
                 description: Cloudflare Turnstile 验证 token
@@ -269,6 +273,9 @@
               pinned:
                 type: boolean
                 description: 是否置顶（仅管理员）
+              anonymous:
+                type: boolean
+                description: 是否开启匿名投票模式
               options:
                 type: array
                 items:

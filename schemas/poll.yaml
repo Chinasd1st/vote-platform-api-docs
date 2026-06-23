@@ -32,6 +32,10 @@ PollSummary:
     pinned:
       type: boolean
       example: false
+    anonymous:
+      type: boolean
+      example: false
+      description: 是否开启匿名投票模式
     createdAt:
       type: integer
       example: 1719000000

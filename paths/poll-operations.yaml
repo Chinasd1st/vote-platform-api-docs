@@ -123,3 +123,77 @@
                 shareCount:
                   type: integer
                   description: 最新的分享计数
+
+/polls/{id}/bookmark:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 要收藏的投票 ID
+  post:
+    tags: [Polls]
+    summary: 收藏投票
+    operationId: bookmarkPoll
+    security:
+      - BearerAuth: []
+    description: |
+      将投票添加到当前用户的收藏列表。
+
+      **行为：**
+      - 不可重复收藏
+      - 更新投票的收藏计数
+      - 通知投票作者（可选）
+
+      **使用场景：**
+      - 用户点击收藏按钮
+      - 用于保存感兴趣的投票以便后续查看
+    responses:
+      "200":
+        description: 收藏成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  example: true
+                bookmarked:
+                  type: boolean
+                  example: true
+                  description: 当前收藏状态
+      "400":
+        description: 已经收藏过了
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+  delete:
+    tags: [Polls]
+    summary: 取消收藏
+    operationId: unbookmarkPoll
+    security:
+      - BearerAuth: []
+    description: |
+      从当前用户的收藏列表中移除投票。
+
+      **行为：**
+      - 更新投票的收藏计数
+      - 不会删除其他用户的通知
+    responses:
+      "200":
+        description: 取消收藏成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  example: true
+                bookmarked:
+                  type: boolean
+                  example: false
+                  description: 当前收藏状态
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
