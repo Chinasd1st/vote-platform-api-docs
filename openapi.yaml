@@ -8,16 +8,81 @@ info:
     **认证方式**：Bearer Token (JWT)
     **基础 URL**：https://votehub.silentnrtx.top/api
 
+    ---
+
     ## 认证流程
 
-    1. 调用 `POST /auth/login` 获取 session
-    2. 或通过 NextAuth GitHub OAuth 登录
-    3. 请求头携带 `Authorization: Bearer <token>`
+    ```mermaid
+    sequenceDiagram
+      participant U as 用户
+      participant C as 客户端
+      participant S as 服务器
+
+      U->>C: 输入邮箱密码
+      C->>S: POST /auth/login
+      S-->>C: 200 { success: true }
+      Note over C: 保存 JWT cookie
+      C->>S: GET /profile (带 cookie)
+      S-->>C: 200 { data: UserProfile }
+      C-->>U: 显示用户信息
+    ```
+
+    ---
 
     ## 响应格式
 
-    - 成功：`{ data: T, pagination?: Pagination }`
-    - 错误：`{ error: string }`
+    | 类型 | 格式 |
+    |------|------|
+    | 成功 | `{ data: T, pagination?: Pagination }` |
+    | 错误 | `{ error: string }` |
+    | 列表 | `{ data: T[], pagination: Pagination }` |
+
+    ---
+
+    ## 错误码说明
+
+    | HTTP 状态码 | 含义 | 常见原因 |
+    |-------------|------|----------|
+    | `400` | 请求无效 | 参数缺失、格式错误、业务校验失败 |
+    | `401` | 未认证 | 未登录、token 过期、token 无效 |
+    | `403` | 无权限 | 非管理员、非本人操作 |
+    | `404` | 资源不存在 | ID 错误、资源已删除 |
+    | `429` | 请求过于频繁 | 超过频率限制 |
+    | `500` | 服务器错误 | 内部异常（请联系管理员） |
+
+    ---
+
+    ## 频率限制
+
+    | 接口 | 限制 |
+    |------|------|
+    | `POST /auth/login` | 5 次/分钟 |
+    | `POST /users` | 2 次/分钟（无验证码） |
+    | `POST /polls` | 10 次/分钟 |
+    | `POST /posts` | 5 次/分钟 |
+    | `POST /posts/{id}/likes` | 30 次/分钟 |
+    | 其他写入接口 | 10 次/分钟 |
+
+    ---
+
+    ## 分页参数
+
+    | 参数 | 类型 | 默认值 | 说明 |
+    |------|------|--------|------|
+    | `page` | integer | 1 | 页码 |
+    | `limit` | integer | 20 | 每页数量（最大 50） |
+
+    分页响应格式：
+    ```json
+    {
+      "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 100,
+        "totalPages": 5
+      }
+    }
+    ```
   version: "1.0.0"
   contact:
     name: Silentnrtx

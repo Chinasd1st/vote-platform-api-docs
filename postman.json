@@ -1,0 +1,173 @@
+{
+  "info": {
+    "name": "恶俗投票平台 API",
+    "description": "恶俗投票平台 OpenAPI 接口集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://votehub.silentnrtx.top/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "登录",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@vote.com\",\n  \"password\": \"admin123\""
+            }
+          }
+        },
+        {
+          "name": "注册",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"测试用户\",\n  \"email\": \"test@example.com\",\n  \"password\": \"pass1234\""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Polls",
+      "item": [
+        {
+          "name": "获取投票列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/polls?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["polls"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "创建投票",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/polls",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"你最喜欢的编程语言？\",\n  \"description\": \"投票选择最常用的编程语言\",\n  \"options\": [\"TypeScript\", \"JavaScript\", \"Rust\", \"Go\"],\n  \"type\": \"single\",\n  \"status\": \"active\""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "获取推文列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/posts?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "发表推文",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/posts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"分享一个有趣的投票 #投票 #编程\""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "获取当前用户资料",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/profile"
+          }
+        },
+        {
+          "name": "获取用户公开资料",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/profile/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Topics",
+      "item": [
+        {
+          "name": "获取所有主题",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/topics"
+          }
+        }
+      ]
+    }
+  ]
+}
