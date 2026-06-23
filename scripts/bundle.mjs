@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, statSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import yaml from 'js-yaml'
@@ -6,12 +6,19 @@ import yaml from 'js-yaml'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
 
-function loadFile(path) {
-  return yaml.load(readFileSync(path, 'utf-8'))
+const cache = new Map()
+
+function loadFile(filePath) {
+  const s = statSync(filePath)
+  if (!s.isFile()) throw new Error(`EISDIR: tried to read a directory: ${filePath}`)
+  return yaml.load(readFileSync(filePath, 'utf-8'))
 }
 
 function resolveRef(basePath, ref) {
-  const [file, pointer] = ref.split('#')
+  const hashIndex = ref.indexOf('#')
+  const file = hashIndex >= 0 ? ref.slice(0, hashIndex) : ''
+  const pointer = hashIndex >= 0 ? ref.slice(hashIndex + 1) : ''
+
   const filePath = file ? resolve(dirname(basePath), file) : basePath
   const data = loadFile(filePath)
 
@@ -26,30 +33,34 @@ function resolveRef(basePath, ref) {
   return current
 }
 
-function resolveAllRefs(obj, basePath, visited = new Set()) {
+function resolveAllRefs(obj, basePath, depth = 0) {
   if (!obj || typeof obj !== 'object') return obj
+  if (depth > 50) return obj
 
   if (obj.$ref) {
-    const key = `${basePath}#${obj.$ref}`
-    if (visited.has(key)) return { description: '(circular reference)' }
-    visited.add(key)
+    const key = `${resolve(dirname(basePath), obj.$ref.split('#')[0] || '.')}#${obj.$ref.split('#')[1] || ''}`
+    if (cache.has(key)) return cache.get(key)
+    cache.set(key, obj)
 
     const resolved = resolveRef(basePath, obj.$ref)
-    const refFile = obj.$ref.split('#')[0]
-    const refBase = refFile.startsWith('.') ? resolve(dirname(basePath), refFile) : basePath
-    return resolveAllRefs(resolved, refBase, visited)
+    if (resolved === undefined || resolved === null) return obj
+
+    const hashIndex = obj.$ref.indexOf('#')
+    const file = hashIndex >= 0 ? obj.$ref.slice(0, hashIndex) : ''
+    const refBase = file ? resolve(dirname(basePath), file) : basePath
+
+    const result = resolveAllRefs(resolved, refBase, depth + 1)
+    cache.set(key, result)
+    return result
   }
 
   if (Array.isArray(obj)) {
-    return obj.map((item, i) => {
-      const itemPath = `${basePath}[${i}]`
-      return resolveAllRefs(item, itemPath, visited)
-    })
+    return obj.map((item, i) => resolveAllRefs(item, `${basePath}[${i}]`, depth + 1))
   }
 
   const result = {}
-  for (const [key, value] of Object.entries(obj)) {
-    result[key] = resolveAllRefs(value, basePath, visited)
+  for (const [k, v] of Object.entries(obj)) {
+    result[k] = resolveAllRefs(v, basePath, depth + 1)
   }
   return result
 }
@@ -57,15 +68,6 @@ function resolveAllRefs(obj, basePath, visited = new Set()) {
 const specPath = resolve(root, 'openapi.yaml')
 const spec = loadFile(specPath)
 const bundled = resolveAllRefs(spec, specPath)
-
-// Remove $ref if any remain at top level of components
-if (bundled.components?.schemas) {
-  for (const [key, value] of Object.entries(bundled.components.schemas)) {
-    if (value && typeof value === 'object' && value.$ref) {
-      bundled.components.schemas[key] = resolveAllRefs(value, specPath)
-    }
-  }
-}
 
 const outPath = process.argv[2] || resolve(root, 'openapi.json')
 writeFileSync(outPath, JSON.stringify(bundled, null, 2))
