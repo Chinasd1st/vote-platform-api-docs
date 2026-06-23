@@ -121,6 +121,8 @@ paths:
     $ref: "./paths/bindings.yaml#/~1bindings~1{id}"
   /topics:
     $ref: "./paths/topics.yaml#/~1topics"
+  /topics/{id}:
+    $ref: "./paths/topics.yaml#/~1topics~1{id}"
   /admin/users:
     $ref: "./paths/admin.yaml#/~1admin~1users"
   /admin/stats:

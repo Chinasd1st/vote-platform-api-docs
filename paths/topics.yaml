@@ -87,3 +87,125 @@
         description: 主题名称已存在
       "401":
         $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/topics/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 主题 ID
+
+  get:
+    tags: [Topics]
+    summary: 获取主题详情
+    operationId: getTopic
+    description: |
+      返回指定主题的详细信息，包含关联的投票列表。
+
+      **返回内容：**
+      - 主题基本信息（名称、slug、描述、颜色）
+      - 该主题下的投票列表（最多 20 条）
+    responses:
+      "200":
+        description: 成功返回主题详情
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yaml#/components/schemas/Topic"
+                - type: object
+                  properties:
+                    polls:
+                      type: array
+                      items:
+                        $ref: "../openapi.yaml#/components/schemas/PollSummary"
+                      description: 该主题下的投票列表
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+  put:
+    tags: [Topics]
+    summary: 更新主题
+    operationId: updateTopic
+    security:
+      - BearerAuth: []
+    description: |
+      更新主题信息。
+
+      **权限：**
+      - 仅管理员可调用
+
+      **可修改字段：**
+      - 名称（修改后 slug 会自动更新）
+      - 描述
+      - 颜色
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: 新的主题名称
+              description:
+                type: ["string", "null"]
+                description: 新的主题描述
+              color:
+                type: string
+                description: 新的主题颜色（十六进制色值）
+    responses:
+      "200":
+        description: 更新成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "400":
+        description: 主题名称已存在
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+  delete:
+    tags: [Topics]
+    summary: 删除主题
+    operationId: deleteTopic
+    security:
+      - BearerAuth: []
+    description: |
+      删除指定主题。
+
+      **权限：**
+      - 仅管理员可调用
+
+      **注意事项：**
+      - 删除主题不会删除关联的投票
+      - 关联投票的主题 ID 会被清空
+    responses:
+      "200":
+        description: 删除成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
