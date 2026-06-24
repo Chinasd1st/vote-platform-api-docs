@@ -126,6 +126,10 @@ tags:
     description: 账号绑定
   - name: Topics
     description: 主题分类
+  - name: Reports
+    description: 举报系统
+  - name: Ostracism
+    description: 放逐提案
   - name: Admin
     description: 管理后台
   - name: Settings
@@ -196,6 +200,32 @@ paths:
     $ref: "./paths/admin.yaml#/~1admin~1users"
   /admin/stats:
     $ref: "./paths/admin.yaml#/~1admin~1stats"
+  /reports:
+    $ref: "./paths/reports.yaml#/~1reports"
+  /reports/check:
+    $ref: "./paths/reports.yaml#/~1reports~1check"
+  /admin/reports:
+    $ref: "./paths/bans.yaml#/~1admin~1reports"
+  /admin/reports/{id}:
+    $ref: "./paths/bans.yaml#/~1admin~1reports~1{id}"
+  /admin/bans:
+    $ref: "./paths/bans.yaml#/~1admin~1bans"
+  /admin/bans/{id}:
+    $ref: "./paths/bans.yaml#/~1admin~1bans~1{id}"
+  /users/{id}/ban-status:
+    $ref: "./paths/bans.yaml#/~1users~1{id}~1ban-status"
+  /ostracism:
+    $ref: "./paths/ostracism.yaml#/~1ostracism"
+  /ostracism/resolve:
+    $ref: "./paths/ostracism.yaml#/~1ostracism~1resolve"
+  /ostracism/{id}:
+    $ref: "./paths/ostracism.yaml#/~1ostracism~1{id}"
+  /ostracism/{id}/second:
+    $ref: "./paths/ostracism.yaml#/~1ostracism~1{id}~1second"
+  /ostracism/{id}/defense:
+    $ref: "./paths/ostracism.yaml#/~1ostracism~1{id}~1defense"
+  /ostracism/{id}/vote:
+    $ref: "./paths/ostracism.yaml#/~1ostracism~1{id}~1vote"
   /settings/email:
     $ref: "./paths/settings.yaml#/~1settings~1email"
   /settings/oauth:
@@ -242,6 +272,32 @@ components:
       $ref: "./schemas/binding.yaml#/Binding"
     AdminStats:
       $ref: "./schemas/admin.yaml#/AdminStats"
+    OstracismProposal:
+      type: object
+      properties:
+        id:
+          type: string
+        targetId:
+          type: string
+        proposerId:
+          type: string
+        reason:
+          type: string
+        defense:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [collecting, voting, passed, rejected, expired]
+        votesFor:
+          type: integer
+        votesAgainst:
+          type: integer
+        secondsCount:
+          type: integer
+        createdAt:
+          type: integer
+        updatedAt:
+          type: integer
 
   responses:
     UnauthorizedError:
@@ -250,3 +306,5 @@ components:
       $ref: "./schemas/common.yaml#/ForbiddenError"
     NotFoundError:
       $ref: "./schemas/common.yaml#/NotFoundError"
+    BannedError:
+      $ref: "./schemas/common.yaml#/BannedError"

@@ -1,0 +1,390 @@
+/ostracism:
+  get:
+    tags: [Ostracism]
+    summary: 获取放逐提案列表
+    operationId: getOstracismProposals
+    description: |
+      分页返回放逐提案列表。
+
+      **提案状态：**
+      - `collecting` - 收集附议中（需 5 人附议进入投票）
+      - `voting` - 投票中（7 天投票期）
+      - `passed` - 已通过（目标用户被封禁 30 天）
+      - `rejected` - 已否决
+      - `expired` - 已过期
+
+      **排序：**
+      - 按创建时间倒序
+
+      **分页：**
+      - 默认每页 20 条
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+        description: 页码
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [collecting, voting, passed, rejected, expired]
+        description: 按状态筛选
+    responses:
+      "200":
+        description: 成功返回提案列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: "../openapi.yaml#/components/schemas/OstracismProposal"
+                pagination:
+                  $ref: "../openapi.yaml#/components/schemas/Pagination"
+
+  post:
+    tags: [Ostracism]
+    summary: 发起放逐提案
+    operationId: createOstracismProposal
+    security:
+      - BearerAuth: []
+    description: |
+      发起对某用户的放逐提案。
+
+      **发起条件：**
+      - 注册满 7 天
+      - 不能提案自己
+      - 不能提案站长（superadmin）
+      - 不能提案管理员（admin）
+      - 同一目标 30 天内无进行中的提案
+      - 最多同时发起 3 个提案
+
+      **流程：**
+      1. 发起提案（自动附议）
+      2. 收集 5 人附议
+      3. 进入 7 天投票期
+      4. 投票结束自动结算
+      5. 赞成票过半且参与率 ≥20% → 封禁 30 天
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [targetId, reason]
+            properties:
+              targetId:
+                type: string
+                format: uuid
+                description: 目标用户 ID
+              reason:
+                type: string
+                minLength: 10
+                maxLength: 500
+                description: 提案理由
+    responses:
+      "201":
+        description: 提案创建成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: 提案 ID
+      "400":
+        description: 不满足发起条件
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/BannedError"
+
+/ostracism/resolve:
+  post:
+    tags: [Ostracism]
+    summary: 结算过期提案
+    operationId: resolveOstracismProposals
+    description: |
+      结算所有投票已过期的提案。
+
+      **结算规则：**
+      - 赞成票 > 反对票 且 参与率 ≥20% → 通过
+      - 否则 → 否决
+      - 通过后目标用户被封禁 30 天
+
+      **调用方式：**
+      - 通常由定时任务或管理员调用
+      - 一次结算所有过期提案
+    responses:
+      "200":
+        description: 结算完成
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resolved:
+                  type: integer
+                  description: 结算的提案数量
+                results:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+                        enum: [passed, rejected]
+                      votesFor:
+                        type: integer
+                      votesAgainst:
+                        type: integer
+
+/ostracism/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 提案 ID
+  get:
+    tags: [Ostracism]
+    summary: 获取提案详情
+    operationId: getOstracismProposal
+    description: |
+      返回提案完整信息。
+
+      **返回内容：**
+      - 提案基本信息（理由、状态、票数）
+      - 提案人信息
+      - 目标用户信息
+      - 附议列表
+      - 投票列表
+      - 当前用户的附议/投票状态
+    responses:
+      "200":
+        description: 成功返回提案详情
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  allOf:
+                    - $ref: "../openapi.yaml#/components/schemas/OstracismProposal"
+                    - type: object
+                      properties:
+                        proposer:
+                          $ref: "../openapi.yaml#/components/schemas/UserSummary"
+                        target:
+                          $ref: "../openapi.yaml#/components/schemas/UserSummary"
+                        seconds:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              userId:
+                                type: string
+                              createdAt:
+                                type: integer
+                              user:
+                                $ref: "../openapi.yaml#/components/schemas/UserSummary"
+                        votes:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              userId:
+                                type: string
+                              vote:
+                                type: string
+                                enum: [for, against]
+                              createdAt:
+                                type: integer
+                              user:
+                                $ref: "../openapi.yaml#/components/schemas/UserSummary"
+                        currentUserSecond:
+                          type: boolean
+                          description: 当前用户是否已附议
+                        currentUserVote:
+                          type: ["string", "null"]
+                          enum: [for, against]
+                          description: 当前用户的投票
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+/ostracism/{id}/second:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 提案 ID
+  post:
+    tags: [Ostracism]
+    summary: 附议提案
+    operationId: secondOstracismProposal
+    security:
+      - BearerAuth: []
+    description: |
+      附议放逐提案。
+
+      **附议规则：**
+      - 提案人自动附议，无需再次操作
+      - 其他用户可附议
+      - 每人只能附议一次
+      - 附议满 5 人后自动进入投票阶段
+      - 仅 `collecting` 状态可附议
+    responses:
+      "200":
+        description: 附议成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    secondsCount:
+                      type: integer
+                      description: 当前附议人数
+      "400":
+        description: 已附议或提案不在收集阶段
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/BannedError"
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+/ostracism/{id}/defense:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 提案 ID
+  post:
+    tags: [Ostracism]
+    summary: 提交自辩
+    operationId: submitOstracismDefense
+    security:
+      - BearerAuth: []
+    description: |
+      被提案人提交自辩材料。
+
+      **规则：**
+      - 仅目标用户本人可提交
+      - 仅 `collecting` 或 `voting` 状态可提交
+      - 内容最长 500 字符
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [defense]
+            properties:
+              defense:
+                type: string
+                minLength: 1
+                maxLength: 500
+                description: 自辩内容
+    responses:
+      "200":
+        description: 提交成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "400":
+        description: 提案已结束
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        description: 非目标用户
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+/ostracism/{id}/vote:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 提案 ID
+  post:
+    tags: [Ostracism]
+    summary: 投票
+    operationId: voteOstracismProposal
+    security:
+      - BearerAuth: []
+    description: |
+      对放逐提案投票。
+
+      **投票规则：**
+      - 仅 `voting` 状态可投票
+      - 不能对自己提案投票
+      - 每人只能投一次
+      - 投票选项：赞成（for）或 反对（against）
+
+      **结算条件：**
+      - 赞成票 > 反对票
+      - 参与率 ≥20%（注册满 7 天的用户）
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [vote]
+            properties:
+              vote:
+                type: string
+                enum: [for, against]
+                description: 投票选择
+    responses:
+      "200":
+        description: 投票成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    votesFor:
+                      type: integer
+                    votesAgainst:
+                      type: integer
+      "400":
+        description: 已投票或提案不在投票阶段
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/BannedError"
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"

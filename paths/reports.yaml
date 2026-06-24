@@ -1,0 +1,118 @@
+/reports:
+  post:
+    tags: [Reports]
+    summary: 提交举报
+    operationId: submitReport
+    security:
+      - BearerAuth: []
+    description: |
+      提交举报。
+
+      **验证规则：**
+      - 不能举报自己的内容
+      - 同一用户对同一目标只能举报一次（重复返回 409）
+      - 目标必须存在
+
+      **举报类型：**
+      - `spam` - 垃圾信息
+      - `harassment` - 骚扰霸凌
+      - `pornography` - 色情内容
+      - `hate` - 仇恨言论
+      - `misinformation` - 虚假信息
+      - `other` - 其他
+
+      **目标类型：**
+      - `poll` - 投票
+      - `post` - 推文
+      - `comment` - 投票评论
+      - `postComment` - 推文评论
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [targetType, targetId, reason]
+            properties:
+              targetType:
+                type: string
+                enum: [poll, post, comment, postComment]
+                description: 目标类型
+              targetId:
+                type: string
+                description: 目标 ID
+              reason:
+                type: string
+                enum: [spam, harassment, pornography, hate, misinformation, other]
+                description: 举报类型
+              description:
+                type: string
+                maxLength: 500
+                description: 补充说明（可选）
+    responses:
+      "200":
+        description: 举报成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                id:
+                  type: string
+                  description: 举报 ID
+      "400":
+        description: 不能举报自己的内容
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/BannedError"
+      "404":
+        description: 举报对象不存在
+      "409":
+        description: 你已经举报过该内容
+
+/reports/check:
+  get:
+    tags: [Reports]
+    summary: 检查是否已举报
+    operationId: checkReport
+    security:
+      - BearerAuth: []
+    description: |
+      检查当前用户是否已举报过指定目标。
+
+      **参数：**
+      - `targetType` - 目标类型
+      - `targetId` - 目标 ID
+
+      **返回：**
+      - `reported: true` - 已举报
+      - `reported: false` - 未举报
+    parameters:
+      - name: targetType
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [poll, post, comment, postComment]
+        description: 目标类型
+      - name: targetId
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 目标 ID
+    responses:
+      "200":
+        description: 返回举报状态
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reported:
+                  type: boolean
+                  example: false

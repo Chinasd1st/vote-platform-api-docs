@@ -49,3 +49,12 @@ NotFoundError:
         $ref: "#/ErrorResponse"
       example:
         error: "Not found"
+
+BannedError:
+  description: 账号已被封禁
+  content:
+    application/json:
+      schema:
+        $ref: "#/ErrorResponse"
+      example:
+        error: "你的账号已被封禁，请联系管理员"

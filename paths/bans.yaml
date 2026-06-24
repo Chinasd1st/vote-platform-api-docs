@@ -1,0 +1,328 @@
+/admin/reports:
+  get:
+    tags: [Admin]
+    summary: 获取举报列表
+    operationId: adminGetReports
+    security:
+      - BearerAuth: []
+    description: |
+      分页返回举报列表。
+
+      **权限：**
+      - 仅管理员可调用
+
+      **筛选条件：**
+      - `status` - 按状态筛选（pending/resolved/dismissed）
+      - `targetType` - 按目标类型筛选（poll/post/comment/postComment）
+
+      **排序：**
+      - 按创建时间倒序
+
+      **分页：**
+      - 默认每页 20 条
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+        description: 页码
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [pending, resolved, dismissed]
+        description: 按状态筛选
+      - name: targetType
+        in: query
+        schema:
+          type: string
+          enum: [poll, post, comment, postComment]
+        description: 按目标类型筛选
+    responses:
+      "200":
+        description: 成功返回举报列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      targetType:
+                        type: string
+                      targetId:
+                        type: string
+                      reason:
+                        type: string
+                      description:
+                        type: string
+                      status:
+                        type: string
+                      createdAt:
+                        type: integer
+                      reporter:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          slug:
+                            type: integer
+                      url:
+                        type: string
+                        description: 目标内容链接
+                      title:
+                        type: string
+                        description: 目标内容标题
+                      targetOwnerId:
+                        type: ["string", "null"]
+                        description: 目标内容作者 ID
+                pagination:
+                  $ref: "../openapi.yaml#/components/schemas/Pagination"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"
+
+/admin/reports/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 举报 ID
+  put:
+    tags: [Admin]
+    summary: 处理举报
+    operationId: adminHandleReport
+    security:
+      - BearerAuth: []
+    description: |
+      处理举报。
+
+      **权限：**
+      - 仅管理员可调用
+
+      **操作选项：**
+      - `dismiss` - 驳回举报
+      - `ban` - 封禁目标内容作者
+
+      **封禁规则：**
+      - 封禁时需要提供 `banReason`
+      - `banDays` 可选（默认 7 天，≥365 天为永久封禁）
+      - 永久封禁仅站长可操作
+      - 已被封禁的用户不能重复封禁
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [action]
+            properties:
+              action:
+                type: string
+                enum: [dismiss, ban]
+                description: 处理操作
+              banDays:
+                type: integer
+                minimum: 1
+                maximum: 365
+                description: 封禁天数（ban 时可选，默认 7 天）
+              banReason:
+                type: string
+                minLength: 1
+                maxLength: 200
+                description: 封禁理由（ban 时必填）
+    responses:
+      "200":
+        description: 处理成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "400":
+        description: 参数无效或举报已处理
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+/admin/bans:
+  get:
+    tags: [Admin]
+    summary: 获取封禁列表
+    operationId: adminGetBans
+    security:
+      - BearerAuth: []
+    description: |
+      分页返回封禁列表。
+
+      **权限：**
+      - 仅管理员可调用
+
+      **返回内容：**
+      - 封禁 ID、原因、到期时间
+      - 被封禁用户信息
+      - 是否已过期、是否永久封禁
+
+      **排序：**
+      - 按封禁时间倒序
+
+      **分页：**
+      - 默认每页 20 条
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+        description: 页码
+    responses:
+      "200":
+        description: 成功返回封禁列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      reason:
+                        type: string
+                      expiresAt:
+                        type: ["string", "null"]
+                        description: 到期时间（null 为永久）
+                      createdAt:
+                        type: integer
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          slug:
+                            type: integer
+                      isExpired:
+                        type: boolean
+                      isPermanent:
+                        type: boolean
+                pagination:
+                  $ref: "../openapi.yaml#/components/schemas/Pagination"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"
+
+/admin/bans/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 封禁记录 ID
+  delete:
+    tags: [Admin]
+    summary: 提前解封
+    operationId: adminUnbanUser
+    security:
+      - BearerAuth: []
+    description: |
+      提前解除封禁。
+
+      **权限：**
+      - 仅管理员可调用
+
+      **行为：**
+      - 删除封禁记录
+      - 用户可以立即重新登录
+    responses:
+      "200":
+        description: 解封成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+      "403":
+        $ref: "../openapi.yaml#/components/responses/ForbiddenError"
+      "404":
+        $ref: "../openapi.yaml#/components/responses/NotFoundError"
+
+/users/{id}/ban-status:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 用户 ID
+  get:
+    tags: [Users]
+    summary: 查询封禁状态
+    operationId: getUserBanStatus
+    description: |
+      查询指定用户的封禁状态。
+
+      **可见性：**
+      - 公开接口，无需登录
+
+      **返回内容：**
+      - 是否被封禁
+      - 封禁原因（仅封禁时返回）
+      - 到期时间（仅封禁时返回）
+      - 是否永久封禁（仅封禁时返回）
+    responses:
+      "200":
+        description: 成功返回封禁状态
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  title: 未封禁
+                  properties:
+                    banned:
+                      type: boolean
+                      example: false
+                - type: object
+                  title: 已封禁
+                  properties:
+                    banned:
+                      type: boolean
+                      example: true
+                    reason:
+                      type: string
+                      description: 封禁原因
+                    expiresAt:
+                      type: ["string", "null"]
+                      description: 到期时间（null 为永久）
+                    isPermanent:
+                      type: boolean
+                      description: 是否永久封禁
