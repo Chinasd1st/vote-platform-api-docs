@@ -12,13 +12,14 @@
       - 仅管理员可调用
 
       **返回内容：**
-      - 用户基本信息（昵称、头像、简介）
+      - 用户基本信息（昵称、头像）
+      - 邮箱
+      - 角色（user/admin/superadmin）
+      - 举报计数
       - 注册时间
-      - 关注/粉丝数
 
       **分页：**
       - 默认每页 20 条，最大 50 条
-      - 按注册时间倒序排列
     parameters:
       - name: page
         in: query
@@ -44,9 +45,29 @@
                 data:
                   type: array
                   items:
-                    $ref: "../openapi.yaml#/components/schemas/UserSummary"
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      slug:
+                        type: integer
+                      name:
+                        type: string
+                      email:
+                        type: string
+                      avatar:
+                        type: string
+                      role:
+                        type: string
+                        enum: [user, admin, superadmin]
+                      reportCount:
+                        type: integer
+                      createdAt:
+                        type: integer
                 pagination:
                   $ref: "../openapi.yaml#/components/schemas/Pagination"
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
       "403":
         $ref: "../openapi.yaml#/components/responses/ForbiddenError"
 

@@ -112,14 +112,17 @@
       - 仅管理员可调用
 
       **操作选项：**
-      - `dismiss` - 驳回举报
-      - `ban` - 封禁目标内容作者
+      - `dismiss` - 驳回举报（发送通知给举报人）
+      - `ban` - 封禁目标内容作者（发送封禁通知给被封禁人 + 处理通知给举报人）
 
       **封禁规则：**
       - 封禁时需要提供 `banReason`
       - `banDays` 可选（默认 7 天，≥365 天为永久封禁）
       - 永久封禁仅站长可操作
       - 已被封禁的用户不能重复封禁
+
+      **审核备注：**
+      - 可选的 `reviewNote` 字段用于记录处理备注
     requestBody:
       required: true
       content:
@@ -142,6 +145,10 @@
                 minLength: 1
                 maxLength: 200
                 description: 封禁理由（ban 时必填）
+              reviewNote:
+                type: string
+                maxLength: 200
+                description: 审核备注（可选）
     responses:
       "200":
         description: 处理成功
@@ -223,6 +230,12 @@
                             type: string
                           slug:
                             type: integer
+                      admin:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: 执行封禁的管理员 ID
                       isExpired:
                         type: boolean
                       isPermanent:

@@ -1,0 +1,85 @@
+/blocks:
+  get:
+    tags: [Blocks]
+    summary: 获取屏蔽列表
+    operationId: getBlocks
+    security:
+      - BearerAuth: []
+    description: |
+      返回当前用户屏蔽的用户列表。
+
+      **权限：**
+      - 需要登录
+
+      **返回内容：**
+      - 被屏蔽用户的基本信息（ID、昵称、头像）
+
+      **用途：**
+      - 推文列表会自动过滤被屏蔽用户的帖子
+    responses:
+      "200":
+        description: 成功返回屏蔽列表
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      slug:
+                        type: integer
+                      name:
+                        type: string
+                      avatar:
+                        type: string
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"
+
+/blocks/{id}:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 目标用户 ID
+  post:
+    tags: [Blocks]
+    summary: 屏蔽/取消屏蔽
+    operationId: toggleBlock
+    security:
+      - BearerAuth: []
+    description: |
+      屏蔽或取消屏蔽用户（切换操作）。
+
+      **权限：**
+      - 需要登录
+
+      **规则：**
+      - 不能屏蔽自己
+      - 已屏蔽 → 取消屏蔽
+      - 未屏蔽 → 屏蔽
+
+      **副作用：**
+      - 屏蔽后，对方的推文不会出现在你的推文列表中
+      - 对方的推文也不会出现在你的通知中
+    responses:
+      "200":
+        description: 操作成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                blocked:
+                  type: boolean
+                  description: 当前屏蔽状态（true=已屏蔽，false=已取消）
+      "400":
+        description: 不能屏蔽自己
+      "401":
+        $ref: "../openapi.yaml#/components/responses/UnauthorizedError"

@@ -130,6 +130,8 @@ tags:
     description: 举报系统
   - name: Ostracism
     description: 放逐提案
+  - name: Blocks
+    description: 用户屏蔽
   - name: Admin
     description: 管理后台
   - name: Settings
@@ -226,6 +228,10 @@ paths:
     $ref: "./paths/ostracism.yaml#/~1ostracism~1{id}~1defense"
   /ostracism/{id}/vote:
     $ref: "./paths/ostracism.yaml#/~1ostracism~1{id}~1vote"
+  /blocks:
+    $ref: "./paths/blocks.yaml#/~1blocks"
+  /blocks/{id}:
+    $ref: "./paths/blocks.yaml#/~1blocks~1{id}"
   /settings/email:
     $ref: "./paths/settings.yaml#/~1settings~1email"
   /settings/oauth:

@@ -20,6 +20,8 @@
       - `single/multiple` - 返回 `{ votes: [optionId] }`
       - `ranked` - 返回 `{ rankings: [{ optionId, rank }] }`
       - `weighted` - 返回 `{ weights: [{ optionId, weight }] }`
+      - `approval` - 返回 `{ rankings: [{ optionId, rank }] }`，rank: 1/0/-1
+      - `conditional` - 返回 `{ responses: [{ stepId, optionId, rankings, weights }] }`
       - 未登录返回空数组
     responses:
       "200":
@@ -81,6 +83,7 @@
       | `ranked` | `rankings` | `[{ optionId, rank }]`，rank 从 1 开始连续 |
       | `weighted` | `weights` | `[{ optionId, weight }]`，总分不超过 100 |
       | `approval` | `rankings` | rank: 1 赞成 / 0 中立 / -1 反对 |
+      | `conditional` | `responses` | `[{ stepId, optionId/optionIds/rankings/weights }]` |
 
       **注意事项：**
       - 每个用户只能投票一次
@@ -150,6 +153,52 @@
                           minimum: 0
                           maximum: 100
                           description: 权重（0-100）
+                  turnstileToken:
+                    type: string
+                    description: Turnstile 验证 token
+              - type: object
+                title: 条件投票
+                required: [responses]
+                properties:
+                  responses:
+                    type: array
+                    items:
+                      type: object
+                      required: [stepId]
+                      properties:
+                        stepId:
+                          type: string
+                          description: 步骤 ID
+                        optionId:
+                          type: string
+                          description: 单选步骤的选项 ID
+                        optionIds:
+                          type: array
+                          items:
+                            type: string
+                          description: 多选步骤的选项 ID 列表
+                        rankings:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              optionId:
+                                type: string
+                              rank:
+                                type: integer
+                          description: 排序/批准步骤的排名
+                        weights:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              optionId:
+                                type: string
+                              weight:
+                                type: integer
+                                minimum: 0
+                                maximum: 100
+                          description: 加权步骤的权重
                   turnstileToken:
                     type: string
                     description: Turnstile 验证 token
