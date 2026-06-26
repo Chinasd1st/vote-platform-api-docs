@@ -5,6 +5,55 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.14.0] - 2026-06-26
+
+### 新增
+
+- **举报系统** (`Reports`)
+  - `POST /reports` - 提交举报（支持投票/推文/评论/推文评论）
+  - `GET /reports/check` - 检查是否已举报
+
+- **放逐提案** (`Ostracism`)
+  - `GET /ostracism` - 获取放逐提案列表
+  - `POST /ostracism` - 发起放逐提案
+  - `POST /ostracism/resolve` - 结算过期提案
+  - `GET /ostracism/{id}` - 获取提案详情
+  - `POST /ostracism/{id}/second` - 附议提案
+  - `POST /ostracism/{id}/defense` - 提交自辩
+  - `POST /ostracism/{id}/vote` - 投票
+
+- **用户屏蔽** (`Blocks`)
+  - `GET /blocks` - 获取屏蔽列表
+  - `POST /blocks/{id}` - 屏蔽/取消屏蔽
+
+- **条件投票类型** (`conditional`)
+  - 投票创建支持 `formConfig` 多步骤逻辑表单
+  - 投票提交支持 `responses` 格式
+  - 投票详情返回 `conditionalResults`、`funnelData`、`flowData`
+
+- **管理后台扩展** (`Admin`)
+  - `GET /admin/reports` - 获取举报列表
+  - `PUT /admin/reports/{id}` - 处理举报（驳回/封禁）
+  - `GET /admin/bans` - 获取封禁列表
+  - `DELETE /admin/bans/{id}` - 提前解封
+  - `GET /users/{id}/ban-status` - 查询封禁状态
+
+### 变更
+
+- **投票类型** - 新增 `conditional` 条件投票类型
+- **投票详情** - 返回 IRV/Schulze 排序结果（`irvResult`、`schulzeResult`）
+- **推文列表** - 自动过滤被屏蔽用户的帖子
+- **举报处理** - 支持 `reviewNote` 审核备注字段
+- **封禁列表** - 返回执行封禁的管理员信息
+- **用户资料** - 返回绑定账号信息（`boundAccount`）
+- **投票选项** - 草稿状态才可修改选项
+- **置顶功能** - 仅管理员可设置投票置顶
+
+### 修复
+
+- 修复 `ErrorResponse` 循环引用问题
+- 修复 Scalar 渲染 YAML MIME 类型问题（改用 JSON）
+
 ## [1.0.0] - 2026-06-22
 
 ### 新增

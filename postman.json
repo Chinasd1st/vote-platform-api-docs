@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "恶俗投票平台 API",
-    "description": "恶俗投票平台 OpenAPI 接口集合",
+    "description": "恶俗投票平台 OpenAPI 接口集合 v1.14.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -33,15 +33,10 @@
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/auth/login",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@vote.com\",\n  \"password\": \"admin123\""
+              "raw": "{\n  \"email\": \"user@vote.com\",\n  \"password\": \"admin123\"\n}"
             }
           }
         },
@@ -50,15 +45,10 @@
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/users",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"测试用户\",\n  \"email\": \"test@example.com\",\n  \"password\": \"pass1234\""
+              "raw": "{\n  \"name\": \"测试用户\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Pass1234\"\n}"
             }
           }
         }
@@ -87,15 +77,127 @@
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/polls",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"你最喜欢的编程语言？\",\n  \"description\": \"投票选择最常用的编程语言\",\n  \"options\": [\"TypeScript\", \"JavaScript\", \"Rust\", \"Go\"],\n  \"type\": \"single\",\n  \"status\": \"active\""
+              "raw": "{\n  \"title\": \"你最喜欢的编程语言？\",\n  \"description\": \"投票选择最常用的编程语言\",\n  \"options\": [\"TypeScript\", \"JavaScript\", \"Rust\", \"Go\"],\n  \"type\": \"single\",\n  \"status\": \"active\"\n}"
+            }
+          }
+        },
+        {
+          "name": "获取投票详情",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/polls/{{pollId}}"
+          }
+        },
+        {
+          "name": "更新投票",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/polls/{{pollId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"更新后的标题\"\n}"
+            }
+          }
+        },
+        {
+          "name": "删除投票",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/polls/{{pollId}}"
+          }
+        },
+        {
+          "name": "克隆投票",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/polls/{{pollId}}/clone"
+          }
+        },
+        {
+          "name": "导出 CSV",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/polls/{{pollId}}/export"
+          }
+        },
+        {
+          "name": "分享计数",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/polls/{{pollId}}/share"
+          }
+        },
+        {
+          "name": "切换收藏",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/polls/{{pollId}}/bookmark"
+          }
+        },
+        {
+          "name": "获取收藏状态",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/polls/{{pollId}}/bookmark"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Votes",
+      "item": [
+        {
+          "name": "获取投票记录",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/polls/{{pollId}}/vote"
+          }
+        },
+        {
+          "name": "提交单选投票",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/polls/{{pollId}}/vote",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"optionId\": \"option-id-here\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Poll Comments",
+      "item": [
+        {
+          "name": "获取评论列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/polls/{{pollId}}/comments?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["polls", "{{pollId}}", "comments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "发表评论",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/polls/{{pollId}}/comments",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"这是一条评论\"\n}"
             }
           }
         }
@@ -124,15 +226,82 @@
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/posts",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"content\": \"分享一个有趣的投票 #投票 #编程\""
+              "raw": "{\n  \"content\": \"分享一个有趣的投票 #投票 #编程\"\n}"
+            }
+          }
+        },
+        {
+          "name": "获取推文详情",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/posts/{{postId}}"
+          }
+        },
+        {
+          "name": "更新推文",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/posts/{{postId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"更新后的推文内容\"\n}"
+            }
+          }
+        },
+        {
+          "name": "删除推文",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/posts/{{postId}}"
+          }
+        },
+        {
+          "name": "点赞",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/posts/{{postId}}/likes"
+          }
+        },
+        {
+          "name": "取消点赞",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/posts/{{postId}}/likes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Post Comments",
+      "item": [
+        {
+          "name": "获取评论列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{postId}}/comments?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{postId}}", "comments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "发表评论",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/posts/{{postId}}/comments",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"这是一条评论\"\n}"
             }
           }
         }
@@ -149,10 +318,146 @@
           }
         },
         {
+          "name": "更新个人资料",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/profile",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"个人简介\"\n}"
+            }
+          }
+        },
+        {
+          "name": "修改密码",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/profile/password",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"oldpass123\",\n  \"newPassword\": \"Newpass123\"\n}"
+            }
+          }
+        },
+        {
           "name": "获取用户公开资料",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/profile/{{userId}}"
+          }
+        },
+        {
+          "name": "获取粉丝列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/profile/{{userId}}/followers"
+          }
+        },
+        {
+          "name": "获取关注列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/profile/{{userId}}/following"
+          }
+        },
+        {
+          "name": "获取投票历史",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/profile/{{userId}}/votes?page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile", "{{userId}}", "votes"],
+              "query": [{ "key": "page", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Follows",
+      "item": [
+        {
+          "name": "关注用户",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/follows/{{userId}}"
+          }
+        },
+        {
+          "name": "取消关注",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/follows/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blocks",
+      "item": [
+        {
+          "name": "获取屏蔽列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/blocks"
+          }
+        },
+        {
+          "name": "屏蔽/取消屏蔽",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/blocks/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "获取通知列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notifications?page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [{ "key": "page", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "标记全部已读",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/notifications",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"markAll\": true\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "获取登录设备",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sessions"
+          }
+        },
+        {
+          "name": "删除所有其他设备",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/sessions"
           }
         }
       ]
@@ -165,6 +470,256 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/topics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookmarks",
+      "item": [
+        {
+          "name": "获取收藏列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/bookmarks"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "提交举报",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/reports",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetType\": \"post\",\n  \"targetId\": \"target-id-here\",\n  \"reason\": \"spam\",\n  \"description\": \"垃圾信息\"\n}"
+            }
+          }
+        },
+        {
+          "name": "检查是否已举报",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reports/check?targetType=post&targetId=xxx",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "check"],
+              "query": [
+                { "key": "targetType", "value": "post" },
+                { "key": "targetId", "value": "xxx" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ostracism",
+      "item": [
+        {
+          "name": "获取放逐提案列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ostracism?page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["ostracism"],
+              "query": [{ "key": "page", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "发起放逐提案",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ostracism",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetId\": \"user-id-here\",\n  \"reason\": \"该用户多次违反社区规则，发布不当内容\"\n}"
+            }
+          }
+        },
+        {
+          "name": "获取提案详情",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/ostracism/{{proposalId}}"
+          }
+        },
+        {
+          "name": "附议提案",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ostracism/{{proposalId}}/second"
+          }
+        },
+        {
+          "name": "提交自辩",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ostracism/{{proposalId}}/defense",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"defense\": \"我对相关情况进行说明...\"\n}"
+            }
+          }
+        },
+        {
+          "name": "投票",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ostracism/{{proposalId}}/vote",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vote\": \"for\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "获取用户列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"],
+              "query": [{ "key": "page", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "更新用户角色",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/admin/users",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"user-id-here\",\n  \"role\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "获取平台统计",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/stats"
+          }
+        },
+        {
+          "name": "获取举报列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/reports?page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "reports"],
+              "query": [{ "key": "page", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "处理举报",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/admin/reports/{{reportId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"ban\",\n  \"banDays\": 7,\n  \"banReason\": \"违反社区规则\"\n}"
+            }
+          }
+        },
+        {
+          "name": "获取封禁列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/bans?page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "bans"],
+              "query": [{ "key": "page", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "解封用户",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/admin/bans/{{banId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "获取 OAuth 绑定状态",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/settings/oauth"
+          }
+        },
+        {
+          "name": "发起 OAuth 绑定",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/settings/oauth",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"github\"\n}"
+            }
+          }
+        },
+        {
+          "name": "解绑 OAuth",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/settings/oauth/github"
+          }
+        },
+        {
+          "name": "修改邮箱",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/settings/email",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"pass1234\",\n  \"newEmail\": \"new@example.com\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Utility",
+      "item": [
+        {
+          "name": "Turnstile 验证",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/turnstile",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"turnstile-token-here\"\n}"
+            }
           }
         }
       ]

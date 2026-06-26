@@ -305,6 +305,190 @@ components:
         updatedAt:
           type: integer
 
+    IRVResult:
+      type: object
+      description: 即时决选（IRV）排序结果
+      properties:
+        winner:
+          type: ["string", "null"]
+          description: 获胜选项 ID（平局或无票时为 null）
+        rounds:
+          type: array
+          items:
+            type: object
+            properties:
+              round:
+                type: integer
+                description: 轮次编号（从 1 开始）
+              counts:
+                type: object
+                additionalProperties:
+                  type: integer
+                description: 各选项的第一选择票数
+              eliminated:
+                type: array
+                items:
+                  type: string
+                description: 已淘汰的选项 ID 列表
+              transferred:
+                type: object
+                description: "票数转移记录 (key: fromId->toId)"
+                additionalProperties:
+                  type: object
+                  properties:
+                    from:
+                      type: string
+                    to:
+                      type: string
+                    count:
+                      type: integer
+              winner:
+                type: ["string", "null"]
+                description: 本轮获胜者（无获胜者时为 null）
+        totalVoters:
+          type: integer
+          description: 投票总人数
+
+    SchulzeResult:
+      type: object
+      description: Schulze 排序方法结果
+      properties:
+        winner:
+          type: ["string", "null"]
+          description: 获胜选项 ID
+        pairwise:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+          description: 两两偏好矩阵（d[i][j] = 偏好 i 胜过 j 的人数）
+        margins:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+          description: 优势矩阵（m[i][j] = d[i][j] - d[j][i]）
+        strongestPath:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+          description: 最强路径矩阵（Floyd-Warshall 结果）
+        ranking:
+          type: array
+          items:
+            type: string
+          description: 选项 ID 排序（从强到弱）
+        totalVoters:
+          type: integer
+          description: 投票总人数
+
+    ConditionalResult:
+      type: object
+      description: 条件投票的步骤结果
+      properties:
+        stepId:
+          type: string
+          description: 步骤 ID
+        title:
+          type: string
+          description: 步骤标题
+        type:
+          type: string
+          enum: [single, multiple, ranked, weighted, approval]
+          description: 步骤投票类型
+        totalVoters:
+          type: integer
+          description: 参与该步骤的人数
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              optionId:
+                type: string
+              label:
+                type: string
+              votes:
+                type: integer
+              percentage:
+                type: number
+                format: float
+              totalWeight:
+                type: number
+                format: float
+                description: 加权投票的总权重
+              avgWeight:
+                type: number
+                format: float
+                description: 加权投票的平均权重
+        rankings:
+          type: array
+          items:
+            type: object
+            properties:
+              optionId:
+                type: string
+              label:
+                type: string
+              rank:
+                type: integer
+          description: 排名结果（仅 ranked 类型）
+        approvals:
+          type: array
+          items:
+            type: object
+            properties:
+              optionId:
+                type: string
+              label:
+                type: string
+              approve:
+                type: integer
+              neutral:
+                type: integer
+              oppose:
+                type: integer
+          description: 批准结果（仅 approval 类型）
+
+    FunnelData:
+      type: object
+      description: 条件投票的漏斗数据
+      properties:
+        stepId:
+          type: string
+        title:
+          type: string
+        participantCount:
+          type: integer
+          description: 参与人数
+        eligibleCount:
+          type: integer
+          description: 有资格进入下一步的人数
+        completionRate:
+          type: number
+          format: float
+          description: 完成率（0-1）
+
+    FlowData:
+      type: object
+      description: 条件投票的流转数据（Sankey 图）
+      properties:
+        fromStepId:
+          type: string
+        fromLabel:
+          type: string
+        toStepId:
+          type: string
+        toLabel:
+          type: string
+        count:
+          type: integer
+          description: 从上一步选项流转到下一步选项的人数
+
   responses:
     UnauthorizedError:
       $ref: "./schemas/common.yaml#/UnauthorizedError"
